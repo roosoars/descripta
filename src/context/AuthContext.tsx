@@ -5,6 +5,7 @@ import { auth } from '../services/firebase';
 interface AuthContextType {
     user: User | null;
     loading: boolean;
+    isGithubUser: boolean;
     loginWithGoogle: () => Promise<void>;
     loginWithGithub: () => Promise<void>;
     logout: () => Promise<void>;
@@ -15,6 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const isGithubUser = user?.providerData?.some((provider) => provider.providerId === 'github.com') ?? false;
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -40,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, loginWithGoogle, loginWithGithub, logout }}>
+        <AuthContext.Provider value={{ user, loading, isGithubUser, loginWithGoogle, loginWithGithub, logout }}>
             {children}
         </AuthContext.Provider>
     );

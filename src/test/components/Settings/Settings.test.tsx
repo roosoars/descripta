@@ -1,11 +1,21 @@
-import { describe, it, expect, vi, type Mock } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Settings from '../../../components/Settings/Settings';
 import { useApp } from '../../../context/AppContext';
+import { useAuth } from '../../../context/AuthContext';
+import { discoverProviderModels } from '../../../services/model-discovery';
 
 vi.mock('../../../context/AppContext', () => ({
     useApp: vi.fn(),
+}));
+
+vi.mock('../../../context/AuthContext', () => ({
+    useAuth: vi.fn(),
+}));
+
+vi.mock('../../../services/model-discovery', () => ({
+    discoverProviderModels: vi.fn(),
 }));
 
 describe('Settings', () => {
@@ -14,41 +24,39 @@ describe('Settings', () => {
         setApiKey: vi.fn(),
         provider: 'gemini',
         setProvider: vi.fn(),
-        model: 'gemini-pro',
+        model: 'gemini-2.5-flash',
         setModel: vi.fn(),
         language: 'pt-BR',
         setLanguage: vi.fn(),
         style: 'concise',
         setStyle: vi.fn(),
         history: [],
-        glossary: [], // Glossary component needs this
+        glossary: [],
     };
 
-    it('renders all settings sections', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
         (useApp as unknown as Mock).mockReturnValue(mockContext);
-        render(<Settings onClose={() => { }} />);
-
-        expect(screen.getByText('Provedor de IA')).toBeInTheDocument();
-        expect(screen.getByText('Modelo')).toBeInTheDocument();
-        expect(screen.getByText('Idioma de Saída')).toBeInTheDocument();
-        expect(screen.getByDisplayValue('key123')).toBeInTheDocument();
+        (useAuth as unknown as Mock).mockReturnValue({ isGithubUser: true });
+        (discoverProviderModels as unknown as Mock).mockResolvedValue(['gemini-2.5-flash', 'gemini-2.5-pro']);
     });
 
-    it('updates settings', async () => {
-        const setModelMock = vi.fn();
-        (useApp as unknown as Mock).mockReturnValue({
-            ...mockContext,
-            setModel: setModelMock,
-        });
-
+    it('renders provider options including GitHub Models for GitHub users', () => {
         render(<Settings onClose={() => { }} />);
 
-        // Interaction with selects can be tricky with libraries, standard select:
-        // Using getByLabelText or similar if labels exist
-        // Labels are: "Modelo", "Idioma de Saída"
-        // But the select components in Settings are native selects styled with class 'input' (Step 181 lines 91, 107)
+        expect(screen.getByText('Google Gemini')).toBeInTheDocument();
+        expect(screen.getByText('OpenAI')).toBeInTheDocument();
+        expect(screen.getByText('GitHub Models')).toBeInTheDocument();
+    });
 
-        // Note: the component labels are standard label tags, so we can access by label text
+    it('hides GitHub Models provider for non-GitHub users', () => {
+        (useAuth as unknown as Mock).mockReturnValue({ isGithubUser: false });
+        render(<Settings onClose={() => { }} />);
+
+        expect(screen.queryByText('GitHub Models')).not.toBeInTheDocument();
+        expect(
+            screen.getByText('Faça login com GitHub para habilitar o provedor GitHub Models.')
+        ).toBeInTheDocument();
     });
 
     it('saves api key', async () => {
@@ -69,5 +77,13 @@ describe('Settings', () => {
 
         expect(setApiKeyMock).toHaveBeenCalledWith('new-key');
         expect(onCloseMock).toHaveBeenCalled();
+    });
+
+    it('loads discovered models when api key is present', async () => {
+        render(<Settings onClose={() => { }} />);
+
+        await waitFor(() => {
+            expect(discoverProviderModels).toHaveBeenCalledWith('gemini', 'key123');
+        });
     });
 });

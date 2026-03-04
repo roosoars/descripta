@@ -11,6 +11,12 @@ export default function Header() {
 
     if (!user) return null;
 
+    const providerLabel = provider === 'gemini'
+        ? 'Gemini'
+        : provider === 'openai'
+            ? 'OpenAI'
+            : 'GitHub Models';
+
     return (
         <header className="header">
             <div className="header__inner">
@@ -22,7 +28,7 @@ export default function Header() {
                 <div className="header__actions">
                     <div className="header__status">
                         <span className="status-indicator"></span>
-                        <span className="status-text">{provider === 'gemini' ? 'Gemini' : 'OpenAI'} / {model}</span>
+                        <span className="status-text">{providerLabel} / {model}</span>
                     </div>
 
                     <button className="icon-btn" onClick={toggleTheme} title="Toggle Theme">

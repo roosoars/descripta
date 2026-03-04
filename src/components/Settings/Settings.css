@@ -38,8 +38,18 @@
 
 .provider-buttons {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: var(--space-3);
+}
+
+.settings-helper {
+    margin: var(--space-1) 0 0;
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+}
+
+.settings-helper--error {
+    color: var(--error);
 }
 
 /* ===== INFO BOX ===== */

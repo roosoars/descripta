@@ -29,12 +29,16 @@ describe('Login', () => {
     it('renders icon logo and nav actions in expected order', () => {
         const { container } = render(<Login />);
 
-        expect(container.querySelector('.login__nav-brand svg')).toBeInTheDocument();
+        expect(container.querySelector('.public-nav__brand svg')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'ENTRAR' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Ativar modo escuro/i })).toBeInTheDocument();
 
-        const navActions = container.querySelector('.login__nav-actions');
-        expect(navActions?.firstElementChild?.textContent).toContain('ENTRAR');
+        const navActions = Array.from(container.querySelectorAll('.public-nav__actions > *')).map(
+            (element) => element.textContent?.trim() || ''
+        );
+        expect(navActions[0]).toContain('HOME');
+        expect(navActions[1]).toContain('DOCS');
+        expect(navActions[2]).toContain('ENTRAR');
     });
 
     it('opens login modal on access click', async () => {
