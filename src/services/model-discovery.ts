@@ -14,22 +14,7 @@ interface GeminiModelsResponse {
     }>;
 }
 
-interface GithubCatalogResponseItem {
-    id?: string;
-    name?: string;
-    model?: string;
-    slug?: string;
-    publisher?: string;
-    rate_limit_tier?: string;
-    supported_input_modalities?: string[];
-    supported_output_modalities?: string[];
-    capabilities?: {
-        input_modalities?: string[];
-        output_modalities?: string[];
-    };
-}
-
-interface GithubInferenceResponseItem {
+interface GithubCopilotResponseItem {
     id?: string;
     model?: string;
     name?: string;
@@ -40,16 +25,10 @@ interface GithubInferenceResponseItem {
     supported_output_modalities?: string[];
 }
 
-interface GithubInferenceResponse {
-    data?: GithubInferenceResponseItem[];
-    models?: GithubInferenceResponseItem[];
-    items?: GithubInferenceResponseItem[];
-}
-
-interface GithubCatalogEnvelope {
-    data?: GithubCatalogResponseItem[];
-    models?: GithubCatalogResponseItem[];
-    items?: GithubCatalogResponseItem[];
+interface GithubCopilotResponse {
+    data?: GithubCopilotResponseItem[];
+    models?: GithubCopilotResponseItem[];
+    items?: GithubCopilotResponseItem[];
 }
 
 export interface GithubCatalogModel {
@@ -93,9 +72,7 @@ const COPILOT_MODEL_MULTIPLIERS: Array<{ pattern: RegExp; multiplier: CopilotMul
     { pattern: /goldeneye/i, multiplier: { free: '1x', paid: '-' } },
 ];
 
-const GITHUB_INFERENCE_MODELS_ENDPOINT = 'https://models.github.ai/inference/models';
-const GITHUB_INFERENCE_V1_MODELS_ENDPOINT = 'https://models.github.ai/inference/v1/models';
-const GITHUB_CATALOG_MODELS_ENDPOINT = 'https://models.github.ai/catalog/models';
+const GITHUB_COPILOT_MODELS_ENDPOINT = 'https://api.githubcopilot.com/models';
 
 function dedupeAndSort(models: string[]): string[] {
     return Array.from(new Set(models.filter(Boolean))).sort((a, b) => a.localeCompare(b));
@@ -137,10 +114,6 @@ function isLikelyChatModel(modelId: string): boolean {
     return id.startsWith('gpt-') || id.startsWith('o1') || id.startsWith('o3') || id.startsWith('o4');
 }
 
-function extractGithubModelId(item: GithubCatalogResponseItem): string {
-    return item.id || item.model || item.slug || item.name || '';
-}
-
 function normalizeModalities(modalities: string[] | undefined): string[] {
     return dedupeAndSort((modalities || []).map((value) => value.toLowerCase()));
 }
@@ -157,34 +130,7 @@ function resolveCopilotMultiplier(model: { id: string; name: string }): CopilotM
     return { free: '-', paid: '-' };
 }
 
-function normalizeGithubCatalogItem(item: GithubCatalogResponseItem): GithubCatalogModel | null {
-    const id = extractGithubModelId(item);
-    if (!id) return null;
-
-    const name = item.name || id;
-    const supportedInputModalities = normalizeModalities(
-        item.supported_input_modalities || item.capabilities?.input_modalities
-    );
-    const supportedOutputModalities = normalizeModalities(
-        item.supported_output_modalities || item.capabilities?.output_modalities
-    );
-    const isVisionCapable = supportedInputModalities.includes('image');
-    const multiplier = resolveCopilotMultiplier({ id, name });
-
-    return {
-        id,
-        name,
-        publisher: item.publisher || '-',
-        rateLimitTier: item.rate_limit_tier || '-',
-        supportedInputModalities,
-        supportedOutputModalities,
-        isVisionCapable,
-        paidMultiplier: multiplier.paid,
-        freeMultiplier: multiplier.free,
-    };
-}
-
-function normalizeGithubInferenceItem(item: GithubInferenceResponseItem): GithubCatalogModel | null {
+function normalizeGithubCopilotItem(item: GithubCopilotResponseItem): GithubCatalogModel | null {
     const id = item.id || item.model || item.name || '';
     if (!id) return null;
 
@@ -207,27 +153,14 @@ function normalizeGithubInferenceItem(item: GithubInferenceResponseItem): Github
     };
 }
 
-function normalizeGithubInferencePayload(payload: unknown): GithubCatalogModel[] {
-    const data = payload as GithubInferenceResponse | GithubInferenceResponseItem[];
+function normalizeGithubCopilotPayload(payload: unknown): GithubCatalogModel[] {
+    const data = payload as GithubCopilotResponse | GithubCopilotResponseItem[];
     const rawItems = Array.isArray(data)
         ? data
         : data.data || data.models || data.items || [];
 
     const normalized = rawItems
-        .map(normalizeGithubInferenceItem)
-        .filter((item): item is GithubCatalogModel => Boolean(item));
-
-    return normalized.sort((a, b) => a.name.localeCompare(b.name));
-}
-
-function normalizeGithubCatalogPayload(payload: unknown): GithubCatalogModel[] {
-    const data = payload as GithubCatalogEnvelope | GithubCatalogResponseItem[];
-    const rawItems = Array.isArray(data)
-        ? data
-        : data.items || data.models || data.data || [];
-
-    const normalized = rawItems
-        .map(normalizeGithubCatalogItem)
+        .map(normalizeGithubCopilotItem)
         .filter((item): item is GithubCatalogModel => Boolean(item));
 
     return normalized.sort((a, b) => a.name.localeCompare(b.name));
@@ -275,41 +208,20 @@ export async function discoverGeminiModels(apiKey: string): Promise<string[]> {
 
 export async function discoverGithubModelCatalog(oauthToken: string): Promise<GithubCatalogModel[]> {
     try {
-        let modelsFromInference: GithubCatalogModel[] = [];
-        let inferenceError: Error | null = null;
+        const response = await fetch(GITHUB_COPILOT_MODELS_ENDPOINT, {
+            headers: {
+                Authorization: `Bearer ${oauthToken}`,
+                Accept: 'application/json',
+            },
+        });
 
-        for (const endpoint of [GITHUB_INFERENCE_MODELS_ENDPOINT, GITHUB_INFERENCE_V1_MODELS_ENDPOINT]) {
-            try {
-                const inferenceResponse = await fetch(endpoint, {
-                    headers: {
-                        Authorization: `Bearer ${oauthToken}`,
-                        Accept: 'application/json',
-                    },
-                });
-
-                if (!inferenceResponse.ok) {
-                    inferenceError = new Error(
-                        await buildProviderError(inferenceResponse, 'Falha ao carregar modelos do GitHub Models.')
-                    );
-                    continue;
-                }
-
-                const inferencePayload = await inferenceResponse.json();
-                modelsFromInference = normalizeGithubInferencePayload(inferencePayload);
-                if (modelsFromInference.length > 0) {
-                    break;
-                }
-            } catch (error) {
-                inferenceError = error instanceof Error
-                    ? error
-                    : new Error('Falha de rede ao carregar modelos do GitHub Models.');
-            }
+        if (!response.ok) {
+            throw new Error(await buildProviderError(response, 'Falha ao carregar modelos do GitHub Models.'));
         }
 
-        if (modelsFromInference.length === 0) {
-            if (inferenceError) {
-                throw inferenceError;
-            }
+        const payload = await response.json();
+        const models = normalizeGithubCopilotPayload(payload);
+        if (models.length === 0) {
             return getProviderFallbackModels('github-models').map((id) => {
                 const multiplier = resolveCopilotMultiplier({ id, name: id });
                 return {
@@ -326,32 +238,7 @@ export async function discoverGithubModelCatalog(oauthToken: string): Promise<Gi
             });
         }
 
-        // The public catalog endpoint provides richer metadata, but may be blocked by browser CORS.
-        // Use it as best-effort enrichment and keep inference list as the source of truth.
-        try {
-            const catalogResponse = await fetch(GITHUB_CATALOG_MODELS_ENDPOINT, {
-                headers: {
-                    Authorization: `Bearer ${oauthToken}`,
-                    Accept: 'application/json',
-                    'X-GitHub-Api-Version': '2022-11-28',
-                },
-            });
-
-            if (!catalogResponse.ok) {
-                return modelsFromInference;
-            }
-
-            const catalogPayload = await catalogResponse.json();
-            const catalogModels = normalizeGithubCatalogPayload(catalogPayload);
-            if (catalogModels.length === 0) {
-                return modelsFromInference;
-            }
-
-            const catalogById = new Map(catalogModels.map((model) => [model.id, model]));
-            return modelsFromInference.map((model) => catalogById.get(model.id) || model);
-        } catch {
-            return modelsFromInference;
-        }
+        return models;
     } catch (error) {
         if (error instanceof TypeError) {
             throw new Error('Falha de rede/CORS ao listar modelos GitHub. Atualize a sessão GitHub e tente novamente.');
