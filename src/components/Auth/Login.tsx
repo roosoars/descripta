@@ -29,7 +29,7 @@ export default function Login() {
     return (
         <div className="login">
             {/* Navigation */}
-            <PublicNav active="home" onAccessClick={() => setShowLoginModal(true)} />
+            <PublicNav onAccessClick={() => setShowLoginModal(true)} />
 
             {/* Hero Section */}
             <div className="login__hero">

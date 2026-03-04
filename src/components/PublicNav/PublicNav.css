@@ -69,11 +69,6 @@
     box-shadow: var(--shadow-sm);
 }
 
-.public-nav__btn.active {
-    border-color: color-mix(in srgb, var(--brand-primary) 70%, var(--border-primary));
-    color: var(--brand-primary);
-}
-
 .public-nav__btn--primary {
     background: var(--brand-primary);
     border-color: color-mix(in srgb, var(--brand-primary) 70%, var(--border-primary));

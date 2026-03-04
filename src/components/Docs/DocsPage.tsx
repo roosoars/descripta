@@ -252,7 +252,7 @@ export default function DocsPage() {
 
     return (
         <div className="docs-page">
-            <PublicNav active="docs" fixed />
+            <PublicNav fixed brandLabel="DESCRIPTA DOCS" />
 
             <main className="docs-main">
                 <article className="docs-card">
