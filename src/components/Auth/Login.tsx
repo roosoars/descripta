@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { PenTool, Zap, Shield, Globe, Code2 } from 'lucide-react';
+import { PenTool, Zap, Shield, Globe, Code2, Moon, Sun } from 'lucide-react';
 import Button from '../UI/Button';
 import Modal from '../UI/Modal';
+import { useTheme } from '../../context/ThemeContext';
 import './Login.css';
 
 export default function Login() {
     const { loginWithGoogle, loginWithGithub } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [loading, setLoading] = useState<'google' | 'github' | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -33,13 +35,24 @@ export default function Login() {
                     <PenTool size={24} />
                     <span>DESCRIPTA</span>
                 </div>
-                <Button
-                    variant="primary"
-                    size="md"
-                    onClick={() => setShowLoginModal(true)}
-                >
-                    Acessar
-                </Button>
+                <div className="login__nav-actions">
+                    <Button
+                        variant="primary"
+                        size="md"
+                        onClick={() => setShowLoginModal(true)}
+                    >
+                        ENTRAR
+                    </Button>
+                    <button
+                        type="button"
+                        className="login__theme-btn"
+                        onClick={toggleTheme}
+                        title={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+                        aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+                    >
+                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                    </button>
+                </div>
             </nav>
 
             {/* Hero Section */}
