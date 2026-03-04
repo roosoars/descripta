@@ -25,11 +25,12 @@ vi.mock('firebase/auth', async () => {
 
 // Helper component
 const TestComponent = () => {
-    const { user, loading, loginWithGoogle, logout } = useAuth();
+    const { user, loading, isGithubUser, loginWithGoogle, logout } = useAuth();
     if (loading) return <div>Loading...</div>;
     return (
         <div>
             {user ? <span data-testid="user-email">{user.email}</span> : <span>No User</span>}
+            <span data-testid="is-github-user">{String(isGithubUser)}</span>
             <button onClick={loginWithGoogle}>Login Google</button>
             <button onClick={logout}>Logout</button>
         </div>
@@ -41,6 +42,7 @@ describe('AuthContext', () => {
         uid: '123',
         email: 'test@example.com',
         displayName: 'Test User',
+        providerData: [{ providerId: 'github.com' }],
     };
 
     beforeEach(() => {
@@ -79,6 +81,7 @@ describe('AuthContext', () => {
         );
 
         await waitFor(() => expect(screen.getByTestId('user-email')).toHaveTextContent('test@example.com'));
+        expect(screen.getByTestId('is-github-user')).toHaveTextContent('true');
     });
 
     it('calls signInWithPopup when loginWithGoogle is called', async () => {

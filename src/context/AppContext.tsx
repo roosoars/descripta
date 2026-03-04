@@ -7,6 +7,7 @@ import {
     type AIProvider,
     type Language,
     type DescriptionStyle,
+    getProviderFallbackModels,
 } from '../types';
 
 interface AppContextType {
@@ -43,7 +44,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { user, logout } = useAuth();
     const [apiKey, setApiKey] = useState(() => localStorage.getItem('apiKey') || '');
     const [provider, setProvider] = useState<AIProvider>(() => (localStorage.getItem('provider') as AIProvider) || 'gemini');
-    const [model, setModel] = useState(() => localStorage.getItem('model') || 'gemini-1.5-flash');
+    const [model, setModel] = useState(() => localStorage.getItem('model') || getProviderFallbackModels('gemini')[0]);
     const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('language') as Language) || 'pt-BR');
     const [style, setStyle] = useState<DescriptionStyle>(() => (localStorage.getItem('style') as DescriptionStyle) || 'concise');
     const [results, setResults] = useState<Result[]>([]);
@@ -78,13 +79,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, [history]);
 
     const [glossary, setGlossary] = useState<{ term: string; definition: string }[]>(() => {
-        const saved = localStorage.getItem('descripta_glossary');
+        const saved = localStorage.getItem('glossary') || localStorage.getItem('descripta_glossary');
         return saved ? JSON.parse(saved) : [];
     });
     const [showSettings, setShowSettings] = useState(false);
 
     useEffect(() => {
         localStorage.setItem('glossary', JSON.stringify(glossary));
+        localStorage.removeItem('descripta_glossary');
     }, [glossary]);
 
     const addGlossaryTerm = (term: string, definition: string) => {

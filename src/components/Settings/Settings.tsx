@@ -1,15 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { GEMINI_MODELS, OPENAI_MODELS, type Language, type DescriptionStyle } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import {
+    getProviderFallbackModels,
+    type AIProvider,
+    type Language,
+    type DescriptionStyle,
+} from '../../types';
 import Modal from '../UI/Modal';
 import Input from '../UI/Input';
 import Button from '../UI/Button';
 import Badge from '../UI/Badge';
 import Glossary from './Glossary';
 import { Info } from 'lucide-react';
+import { discoverProviderModels } from '../../services/model-discovery';
 import './Settings.css';
 
 export default function Settings({ onClose }: { onClose: () => void }) {
+    const { isGithubUser } = useAuth();
     const {
         apiKey,
         setApiKey,
@@ -25,12 +33,61 @@ export default function Settings({ onClose }: { onClose: () => void }) {
     } = useApp();
     const [localKey, setLocalKey] = useState(apiKey);
     const [error, setError] = useState('');
+    const [models, setModels] = useState<string[]>(getProviderFallbackModels(provider));
+    const [modelsLoading, setModelsLoading] = useState(false);
+    const [modelsError, setModelsError] = useState('');
 
-    const models = provider === 'gemini' ? GEMINI_MODELS : OPENAI_MODELS;
+    useEffect(() => {
+        const fallbackModels = getProviderFallbackModels(provider);
+        if (!localKey.trim()) {
+            setModelsLoading(false);
+            setModels(fallbackModels);
+            setModelsError('');
+            if (!fallbackModels.includes(model) && fallbackModels[0]) {
+                setModel(fallbackModels[0]);
+            }
+            return;
+        }
 
-    const handleProviderChange = (newProvider: 'gemini' | 'openai') => {
+        setModelsLoading(true);
+        const timeoutId = window.setTimeout(async () => {
+            try {
+                const discoveredModels = await discoverProviderModels(provider, localKey.trim());
+                const activeModels = discoveredModels.length > 0 ? discoveredModels : fallbackModels;
+                setModels(activeModels);
+                setModelsError('');
+
+                if (!activeModels.includes(model) && activeModels[0]) {
+                    setModel(activeModels[0]);
+                }
+            } catch (loadError) {
+                const message = loadError instanceof Error
+                    ? loadError.message
+                    : 'Falha ao carregar modelos do provedor.';
+
+                setModels(fallbackModels);
+                setModelsError(message);
+                if (!fallbackModels.includes(model) && fallbackModels[0]) {
+                    setModel(fallbackModels[0]);
+                }
+            } finally {
+                setModelsLoading(false);
+            }
+        }, 350);
+
+        return () => {
+            clearTimeout(timeoutId);
+        };
+    }, [provider, localKey, model, setModel]);
+
+    const handleProviderChange = (newProvider: AIProvider) => {
         setProvider(newProvider);
-        setModel(newProvider === 'gemini' ? GEMINI_MODELS[0] : OPENAI_MODELS[0]);
+        const fallbackModels = getProviderFallbackModels(newProvider);
+        if (fallbackModels[0]) {
+            setModel(fallbackModels[0]);
+        }
+        setModels(fallbackModels);
+        setModelsError('');
     };
 
     const handleSave = () => {
@@ -42,6 +99,16 @@ export default function Settings({ onClose }: { onClose: () => void }) {
         setError('');
         onClose();
     };
+
+    const apiKeyLabel = provider === 'gemini'
+        ? 'Chave da API Gemini'
+        : provider === 'openai'
+            ? 'Chave da API OpenAI'
+            : 'Token GitHub Models (PAT)';
+
+    const apiKeyPlaceholder = provider === 'github-models'
+        ? 'Insira seu token com models:read'
+        : 'Insira sua chave de API';
 
     return (
         <Modal
@@ -82,7 +149,22 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                             >
                                 OpenAI
                             </Button>
+                            {isGithubUser && (
+                                <Button
+                                    variant={provider === 'github-models' ? 'primary' : 'secondary'}
+                                    size="md"
+                                    onClick={() => handleProviderChange('github-models')}
+                                    fullWidth
+                                >
+                                    GitHub Models
+                                </Button>
+                            )}
                         </div>
+                        {!isGithubUser && (
+                            <p className="settings-helper">
+                                Faça login com GitHub para habilitar o provedor GitHub Models.
+                            </p>
+                        )}
                     </div>
 
                     {/* Model Selection */}
@@ -92,13 +174,16 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                             className="input"
                             value={model}
                             onChange={(e) => setModel(e.target.value)}
+                            disabled={modelsLoading || models.length === 0}
                         >
+                            {modelsLoading && <option value={model}>Carregando modelos...</option>}
                             {models.map((m) => (
                                 <option key={m} value={m}>
                                     {m}
                                 </option>
                             ))}
                         </select>
+                        {modelsError && <p className="settings-helper settings-helper--error">{modelsError}</p>}
                     </div>
 
                     {/* Language Selection */}
@@ -132,10 +217,10 @@ export default function Settings({ onClose }: { onClose: () => void }) {
 
                     {/* API Key Input */}
                     <Input
-                        label={`Chave da API ${provider === 'gemini' ? 'Gemini' : 'OpenAI'}`}
+                        label={apiKeyLabel}
                         id="api-key"
                         type="password"
-                        placeholder="Insira sua chave de API"
+                        placeholder={apiKeyPlaceholder}
                         value={localKey}
                         onChange={(e) => setLocalKey(e.target.value)}
                         error={error}
@@ -154,13 +239,21 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                                 >
                                     Google AI Studio
                                 </a>
-                            ) : (
+                            ) : provider === 'openai' ? (
                                 <a
                                     href="https://platform.openai.com/api-keys"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
                                     OpenAI Platform
+                                </a>
+                            ) : (
+                                <a
+                                    href="https://docs.github.com/en/github-models/prototyping-with-ai-models#free-use-of-github-models"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    GitHub Models (PAT models:read)
                                 </a>
                             )}
                         </span>

@@ -13,7 +13,7 @@ export interface AIResponse {
  */
 export async function generateDescription(
     image: File,
-    provider: 'gemini' | 'openai',
+    provider: 'gemini' | 'openai' | 'github-models',
     apiKey: string,
     model: string,
     language: Language = 'pt-BR',
@@ -22,9 +22,13 @@ export async function generateDescription(
 ): Promise<AIResponse> {
     if (provider === 'gemini') {
         return generateWithGemini(image, apiKey, model, language, style, glossary);
-    } else {
+    }
+
+    if (provider === 'openai') {
         return generateWithOpenAI(image, apiKey, model, language, style, glossary);
     }
+
+    return generateWithGithubModels(image, apiKey, model, language, style, glossary);
 }
 
 function buildPrompt(language: Language, style: DescriptionStyle, glossary: { term: string; definition: string }[]): string {
@@ -50,8 +54,12 @@ function buildPrompt(language: Language, style: DescriptionStyle, glossary: { te
     }
 
     return `Analyze this image and provide a JSON response in ${langName}.
-    
-    Style guide: ${styleDesc}
+
+    Critical output rules:
+    1) Write ALL textual fields strictly in ${langName}.
+    2) Apply this style to both "alt" and "description": ${styleDesc}
+    3) If a glossary term is contextually relevant, use its mapped definition exactly.
+    4) Keep language and style consistent; do not fallback to default wording.
     ${glossaryText}
 
     Required JSON structure:
@@ -146,6 +154,47 @@ async function generateWithOpenAI(
 }
 
 /**
+ * Generate description using GitHub Models (OpenAI compatible endpoint)
+ */
+async function generateWithGithubModels(
+    image: File,
+    apiKey: string,
+    model: string,
+    language: Language,
+    style: DescriptionStyle,
+    glossary: { term: string; definition: string }[]
+): Promise<AIResponse> {
+    const client = new OpenAI({
+        apiKey,
+        baseURL: 'https://models.github.ai/inference',
+        dangerouslyAllowBrowser: true,
+    });
+    const imageData = await fileToBase64(image);
+    const prompt = buildPrompt(language, style, glossary);
+
+    const response = await client.chat.completions.create({
+        model,
+        messages: [
+            {
+                role: 'user',
+                content: [
+                    { type: 'text', text: prompt },
+                    { type: 'image_url', image_url: { url: imageData } },
+                ],
+            },
+        ],
+        response_format: { type: 'json_object' },
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+        throw new Error('No response from GitHub Models');
+    }
+
+    return JSON.parse(content);
+}
+
+/**
  * Convert File to base64 data URL
  */
 function fileToBase64(file: File): Promise<string> {
@@ -168,7 +217,7 @@ function fileToBase64(file: File): Promise<string> {
  */
 export async function generateBatchDescriptions(
     images: File[],
-    provider: 'gemini' | 'openai',
+    provider: 'gemini' | 'openai' | 'github-models',
     apiKey: string,
     model: string,
     language: Language,
