@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import DocsPage from '../../../components/Docs/DocsPage';
 
@@ -9,32 +8,45 @@ vi.mock('../../../components/PublicNav/PublicNav', () => ({
 }));
 
 describe('DocsPage', () => {
-    it('renders first page and pagination state', () => {
+    it('renders docs hero and primary sections', () => {
         render(
             <MemoryRouter>
                 <DocsPage />
             </MemoryRouter>
         );
 
-        expect(screen.getByText('Visão Geral')).toBeInTheDocument();
-        expect(screen.getByText('Página 1 de 8')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Página anterior' })).toBeDisabled();
+        expect(screen.queryByRole('heading', { name: 'Guia Definitivo do Descripta' })).not.toBeInTheDocument();
+        expect(screen.queryByText(/Guia completo para configurar autenticação/i)).not.toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Início Rápido' })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Visão Geral' })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Acesso e Autenticação' })).toBeInTheDocument();
     });
 
-    it('navigates between pages with next and previous', async () => {
-        const user = userEvent.setup();
+    it('renders sidebar links for section anchors and removes "Nesta página"', () => {
         render(
             <MemoryRouter>
                 <DocsPage />
             </MemoryRouter>
         );
 
-        await user.click(screen.getByRole('button', { name: 'Próxima página' }));
-        expect(screen.getByText('Acesso e Autenticação')).toBeInTheDocument();
-        expect(screen.getByText('Página 2 de 8')).toBeInTheDocument();
+        const quickStartLink = screen.getByRole('link', { name: 'Início Rápido' });
+        expect(quickStartLink).toHaveAttribute('href', '#inicio-rapido');
 
-        await user.click(screen.getByRole('button', { name: 'Página anterior' }));
-        expect(screen.getByText('Visão Geral')).toBeInTheDocument();
+        const overviewLink = screen.getByRole('link', { name: 'Visão Geral' });
+        expect(overviewLink).toHaveAttribute('href', '#visao-geral');
+        expect(screen.queryByText('Nesta página')).not.toBeInTheDocument();
+    });
+
+    it('does not render legacy page navigation controls', () => {
+        render(
+            <MemoryRouter>
+                <DocsPage />
+            </MemoryRouter>
+        );
+
+        expect(screen.queryByRole('button', { name: /Página anterior/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Próxima página/i })).not.toBeInTheDocument();
+        expect(screen.queryByText(/Página \d+ de \d+/i)).not.toBeInTheDocument();
     });
 
     it('does not mention support or feature request', () => {
@@ -44,7 +56,8 @@ describe('DocsPage', () => {
             </MemoryRouter>
         );
 
-        expect(screen.queryByText(/SUPORTE/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/^SUPORTE$/i)).not.toBeInTheDocument();
         expect(screen.queryByText(/SOLICITAR FUNCIONALIDADE/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/\/contato/i)).not.toBeInTheDocument();
     });
 });

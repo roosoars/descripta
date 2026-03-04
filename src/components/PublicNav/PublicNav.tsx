@@ -3,12 +3,16 @@ import { useTheme } from '../../context/ThemeContext';
 import './PublicNav.css';
 
 interface PublicNavProps {
-    active: 'home' | 'docs';
     onAccessClick?: () => void;
     fixed?: boolean;
+    brandLabel?: string;
 }
 
-export default function PublicNav({ active, onAccessClick, fixed = false }: PublicNavProps) {
+export default function PublicNav({
+    onAccessClick,
+    fixed = false,
+    brandLabel = 'DESCRIPTA',
+}: PublicNavProps) {
     const { theme, toggleTheme } = useTheme();
 
     return (
@@ -16,14 +20,14 @@ export default function PublicNav({ active, onAccessClick, fixed = false }: Publ
             <nav className="public-nav">
                 <a href="/" className="public-nav__brand">
                     <PenTool size={20} />
-                    <span>DESCRIPTA</span>
+                    <span>{brandLabel}</span>
                 </a>
 
                 <div className="public-nav__actions">
-                    <a href="/" className={`public-nav__btn ${active === 'home' ? 'active' : ''}`}>
+                    <a href="/" className="public-nav__btn">
                         HOME
                     </a>
-                    <a href="/docs" className={`public-nav__btn ${active === 'docs' ? 'active' : ''}`}>
+                    <a href="/docs" className="public-nav__btn">
                         DOCS
                     </a>
                     {onAccessClick ? (

@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import { generateBatchDescriptions } from '../../services/ai-service';
 import Layout from '../Layout/Layout';
 import Results from '../Results/Results';
@@ -11,8 +12,14 @@ import Badge from '../UI/Badge';
 import { Upload, X, Loader2 } from 'lucide-react';
 import './Workspace.css';
 
+interface StoredGithubModelMetadata {
+    id: string;
+    isVisionCapable?: boolean;
+}
+
 export default function Workspace() {
     const { apiKey, provider, model, language, style, addResult, results, clearResults, showToast, glossary, showSettings, setShowSettings } = useApp();
+    const { githubAccessToken } = useAuth();
     const [files, setFiles] = useState<File[]>([]);
     const [isDragging, setIsDragging] = useState(false);
     const [processing, setProcessing] = useState(false);
@@ -49,9 +56,33 @@ export default function Workspace() {
 
     const handleProcess = async () => {
         if (files.length === 0) return;
-        if (!apiKey) {
+        const providerCredential = provider === 'github-models'
+            ? (githubAccessToken || '')
+            : apiKey;
+
+        if (!providerCredential) {
+            if (provider === 'github-models') {
+                showToast('Reconecte sua conta GitHub nas configurações para listar e usar GitHub Models.', 'error');
+                return;
+            }
             showToast('Configure sua chave de API primeiro!', 'error');
             return;
+        }
+
+        if (provider === 'github-models') {
+            const storedCatalogRaw = localStorage.getItem('github_models_catalog');
+            if (storedCatalogRaw) {
+                try {
+                    const storedCatalog = JSON.parse(storedCatalogRaw) as StoredGithubModelMetadata[];
+                    const selectedModelMetadata = storedCatalog.find((catalogModel) => catalogModel.id === model);
+                    if (selectedModelMetadata && selectedModelMetadata.isVisionCapable === false) {
+                        showToast('O modelo selecionado não aceita entrada de imagem. Escolha um modelo com suporte a imagem.', 'error');
+                        return;
+                    }
+                } catch {
+                    // Ignore catalog parsing issues and continue request flow.
+                }
+            }
         }
 
         // Limpar resultados anteriores para mostrar apenas os novos
@@ -64,7 +95,7 @@ export default function Workspace() {
             const newResults = await generateBatchDescriptions(
                 files,
                 provider,
-                apiKey,
+                providerCredential,
                 model,
                 language,
                 style,

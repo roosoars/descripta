@@ -14,14 +14,14 @@ vi.mock('../../../context/ThemeContext', () => ({
 
 describe('PublicNav', () => {
     it('renders brand icon and no contato entry', () => {
-        const { container } = render(<PublicNav active="home" />);
+        const { container } = render(<PublicNav />);
 
         expect(container.querySelector('.public-nav__brand svg')).toBeInTheDocument();
         expect(screen.queryByText('CONTATO')).not.toBeInTheDocument();
     });
 
     it('keeps theme button to the right of ENTRAR', async () => {
-        const { container } = render(<PublicNav active="home" />);
+        const { container } = render(<PublicNav />);
         const user = userEvent.setup();
 
         const navActions = Array.from(container.querySelectorAll('.public-nav__actions > *'));
@@ -32,5 +32,10 @@ describe('PublicNav', () => {
 
         await user.click(themeButton);
         expect(toggleThemeMock).toHaveBeenCalled();
+    });
+
+    it('allows custom brand label for docs', () => {
+        render(<PublicNav brandLabel="DESCRIPTA DOCS" />);
+        expect(screen.getByText('DESCRIPTA DOCS')).toBeInTheDocument();
     });
 });

@@ -1,180 +1,193 @@
-import { useMemo, type ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import {
+    BookOpenText,
+    History,
+    Languages,
+    ShieldCheck,
+    SlidersHorizontal,
+    TriangleAlert,
+    Upload,
+    Volume2,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import PublicNav from '../PublicNav/PublicNav';
 import './DocsPage.css';
 
-interface DocsPageContent {
+interface DocsSection {
+    id: string;
     title: string;
-    body: ReactNode;
+    intro: string;
+    icon: LucideIcon;
+    paragraphs?: string[];
+    items?: string[];
+    note?: string;
 }
 
-const DOCS_PAGES: DocsPageContent[] = [
+const QUICK_START_STEPS = [
+    'Faça login com sua conta do Google ou GitHub na tela inicial.',
+    'Acesse as Configurações (ícone de engrenagem) e selecione o provedor de IA.',
+    'Ajuste o idioma de saída, o estilo da descrição e o glossário.',
+    'Faça o upload de imagens na página inicial (Workspace).',
+    'Revise os resultados, use o áudio para ouvir as descrições e exporte para CSV.',
+];
+
+const DOCS_SECTIONS: DocsSection[] = [
     {
+        id: 'visao-geral',
         title: 'Visão Geral',
-        body: (
-            <>
-                <p>
-                    O Descripta gera ALT text e descrições acessíveis de imagens usando IA.
-                    O fluxo principal é upload, processamento, revisão e exportação.
-                </p>
-                <ul>
-                    <li>Processamento em lote de imagens.</li>
-                    <li>Resultado com ALT text, descrição detalhada e metadados.</li>
-                    <li>Edição manual antes do uso final.</li>
-                </ul>
-            </>
-        ),
+        icon: BookOpenText,
+        intro: 'O Descripta é a sua ferramenta inteligente para gerar textos alternativos (ALT Text) e descrições detalhadas de imagens, otimizadas para acessibilidade e SEO.',
+        items: [
+            'Geração automática usando os melhores modelos de IA do mercado.',
+            'Descrições ricas identificando objetos, cores dominantes e contexto.',
+            'Interface rápida, em abas e focada em produtividade.',
+            'Narração de áudio nativa com vozes realistas (Gemini Live).',
+        ],
     },
     {
+        id: 'acesso-e-autenticacao',
         title: 'Acesso e Autenticação',
-        body: (
-            <>
-                <p>O acesso principal exige autenticação.</p>
-                <ol>
-                    <li>Abra a home e clique em ENTRAR.</li>
-                    <li>Use login com Google ou GitHub.</li>
-                    <li>Após login, a tela de Workspace fica disponível.</li>
-                </ol>
-            </>
-        ),
+        icon: ShieldCheck,
+        intro: 'Acesse facilmente a plataforma para manter suas configurações locais salvas e liberar os modelos.',
+        items: [
+            'Login em um clique usando Google ou GitHub.',
+            'O uso dos modelos do GitHub Copilot é liberado automaticamente ao entrar com o GitHub.',
+            'Sua sessão e configurações são mantidas localmente de forma segura.',
+        ],
     },
     {
-        title: 'Configuração Inicial',
-        body: (
-            <>
-                <p>Na janela de Settings você define provedor, modelo e credencial da API.</p>
-                <ul>
-                    <li>Provedores: Google Gemini, OpenAI e GitHub Models (quando login via GitHub).</li>
-                    <li>Modelos: carregados dinamicamente quando possível.</li>
-                    <li>A credencial é armazenada localmente no navegador.</li>
-                </ul>
-            </>
-        ),
+        id: 'configuracoes-da-api',
+        title: 'Configurações de IA',
+        icon: SlidersHorizontal,
+        intro: 'Personalize o motor de Inteligência Artificial em uma janela organizada em abas:',
+        items: [
+            'Provedor & API: Escolha entre Google, OpenAI, Anthropic e GitHub Copilot. Cada provedor possui seu melhor modelo pré-selecionado (ex: GPT-4o, Gemini 2.5 Flash, Claude 3.5 Sonnet).',
+            'Saída & Formato: Escolha o idioma (Português, Inglês ou Espanhol) e o estilo da escrita (Conciso, Detalhado, Formal ou Informal).',
+            'Glossário: Defina termos específicos ou nomes de marcas que a IA deve respeitar.',
+            'Uso & Informações: Acompanhe gráficos limpos sobre o uso de cada provedor.',
+        ],
     },
     {
-        title: 'Idioma, Estilo e Glossário',
-        body: (
-            <>
-                <p>Antes de gerar resultados, ajuste idioma, estilo e glossário.</p>
-                <ul>
-                    <li>Idiomas: pt-BR, en-US e es-ES.</li>
-                    <li>Estilos: concise, detailed, formal e informal.</li>
-                    <li>Glossário: padroniza termos do seu domínio durante a geração.</li>
-                </ul>
-            </>
-        ),
-    },
-    {
+        id: 'workspace-e-processamento',
         title: 'Upload e Processamento',
-        body: (
-            <>
-                <p>No Workspace, adicione imagens por clique ou arrastar e soltar.</p>
-                <ol>
-                    <li>Revise a fila de arquivos.</li>
-                    <li>Clique em Gerar Descrições.</li>
-                    <li>Acompanhe o progresso por quantidade processada.</li>
-                </ol>
-            </>
-        ),
+        icon: Upload,
+        intro: 'Gerencie e processe suas imagens em lote com facilidade e rapidez.',
+        items: [
+            'Arraste e solte ou clique para adicionar imagens.',
+            'A IA é instruída a analisar as imagens rigorosamente sem inventar ou "alucinar" informações.',
+            'Processamento paralelo com feedback visual.',
+        ],
     },
     {
-        title: 'Resultados e Edição',
-        body: (
-            <>
-                <p>Cada resultado possui ações de revisão para publicação segura.</p>
-                <ul>
-                    <li>Editar ALT text.</li>
-                    <li>Copiar conteúdo para clipboard.</li>
-                    <li>Visualizar imagem e metadados quando disponíveis.</li>
-                </ul>
-            </>
-        ),
+        id: 'resultados-e-audio',
+        title: 'Resultados e Áudio',
+        icon: Volume2,
+        intro: 'Revise, edite e ouça os resultados gerados.',
+        items: [
+            'Edição Rápida: Altere o ALT Text ou a descrição clicando diretamente no texto gerado.',
+            'Narração Inteligente: Clique no botão flutuante de áudio para ouvir as descrições na voz do modelo Gemini Live (uma voz clara, pausada e natural).',
+            'Ações Práticas: Copie para a área de transferência ou exporte tudo em formato CSV.',
+            'Confiança da IA: Veja as tags, cores e o grau de confiança da IA na imagem.',
+        ],
     },
     {
-        title: 'Histórico e Exportação',
-        body: (
-            <>
-                <p>O app mantém histórico local das gerações da sessão.</p>
-                <ul>
-                    <li>Aba Histórico para consulta dos itens gerados.</li>
-                    <li>Exportação atual em CSV (arquivo, alt, descrição e confiança).</li>
-                </ul>
-                <p className="docs-note">
-                    A exportação em JSON estará disponível nas próximas versões.
-                </p>
-            </>
-        ),
+        id: 'historico-de-geracao',
+        title: 'Histórico de Gerações',
+        icon: History,
+        intro: 'Nunca perca um trabalho anterior.',
+        items: [
+            'Todos os seus resultados são salvos localmente de forma automática.',
+            'Você pode revisitar os resultados, usar a narração em áudio ou copiar os textos novamente sem refazer as requisições.',
+            'Limpe seu histórico apenas quando desejar.',
+        ],
     },
     {
-        title: 'Limites e Troubleshooting',
-        body: (
-            <>
-                <ul>
-                    <li>Sem chave válida de API, o processamento não inicia.</li>
-                    <li>Erros de provedor podem ocorrer por limite, quota ou credencial inválida.</li>
-                    <li>A geração por IA exige revisão humana antes de publicar.</li>
-                </ul>
-                <p>
-                    Em caso de falha, revise credencial, provedor/modelo selecionado e conexão.
-                </p>
-            </>
-        ),
+        id: 'troubleshooting',
+        title: 'Problemas Comuns',
+        icon: TriangleAlert,
+        intro: 'Dicas para resolver problemas durante o uso:',
+        items: [
+            'Se a API do GitHub retornar erro de login: Atualize sua sessão no botão "Atualizar Sessão" ou verifique sua conexão.',
+            'Se uma imagem não processar: Verifique o tamanho do arquivo ou o suporte do modelo escolhido.',
+            'Nenhuma voz de áudio tocando: Verifique o volume do sistema ou a permissão de reprodução automática no navegador.',
+        ],
     },
 ];
 
-function clamp(value: number, min: number, max: number) {
-    return Math.max(min, Math.min(max, value));
-}
-
 export default function DocsPage() {
-    const [searchParams, setSearchParams] = useSearchParams();
-    const requestedPage = Number(searchParams.get('page') || '1');
-    const pageIndex = useMemo(() => {
-        if (Number.isNaN(requestedPage)) return 0;
-        return clamp(requestedPage - 1, 0, DOCS_PAGES.length - 1);
-    }, [requestedPage]);
-
-    const page = DOCS_PAGES[pageIndex];
-
-    const goToPage = (index: number) => {
-        const nextIndex = clamp(index, 0, DOCS_PAGES.length - 1);
-        const nextPage = String(nextIndex + 1);
-        setSearchParams(nextPage === '1' ? {} : { page: nextPage });
-    };
-
     return (
         <div className="docs-page">
-            <PublicNav active="docs" fixed />
+            <PublicNav fixed brandLabel="DESCRIPTA DOCS" />
 
-            <main className="docs-main">
-                <article className="docs-card">
-                    <div className="docs-meta">
-                        <span>DOCUMENTAÇÃO</span>
-                        <span>Página {pageIndex + 1} de {DOCS_PAGES.length}</span>
+            <main className="docs-shell">
+                <aside className="docs-sidebar" aria-label="Navegação da documentação">
+                    <div className="docs-sidebar__header">
+                        <p className="docs-sidebar__kicker">Guia do Usuário</p>
+                        <h2 className="docs-sidebar__title">Documentação</h2>
                     </div>
 
-                    <h1>{page.title}</h1>
+                    <nav className="docs-sidebar__menu">
+                        <p className="docs-sidebar__menu-title">Conteúdo</p>
+                        <ul className="docs-sidebar__list">
+                            <li>
+                                <a className="docs-sidebar__link" href="#inicio-rapido">Início Rápido</a>
+                            </li>
+                            {DOCS_SECTIONS.map((section) => (
+                                <li key={section.id}>
+                                    <a className="docs-sidebar__link" href={`#${section.id}`}>{section.title}</a>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
+                </aside>
 
-                    <div className="docs-content">{page.body}</div>
+                <article className="docs-article">
+                    <section id="inicio-rapido" className="docs-section docs-section--quickstart">
+                        <header className="docs-section__header">
+                            <span className="docs-section__icon" aria-hidden="true">
+                                <Languages size={18} />
+                            </span>
+                            <h2>Início Rápido</h2>
+                        </header>
 
-                    <div className="docs-pagination">
-                        <button
-                            type="button"
-                            onClick={() => goToPage(pageIndex - 1)}
-                            disabled={pageIndex === 0}
-                            aria-label="Página anterior"
-                        >
-                            {'<'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => goToPage(pageIndex + 1)}
-                            disabled={pageIndex === DOCS_PAGES.length - 1}
-                            aria-label="Próxima página"
-                        >
-                            {'>'}
-                        </button>
-                    </div>
+                        <p className="docs-section__intro">
+                            Siga os passos abaixo para começar a usar a ferramenta em menos de 1 minuto:
+                        </p>
+
+                        <ul className="docs-section__list">
+                            {QUICK_START_STEPS.map((step, index) => (
+                                <li key={index}>{step}</li>
+                            ))}
+                        </ul>
+                    </section>
+
+                    {DOCS_SECTIONS.map((section) => (
+                        <section id={section.id} key={section.id} className="docs-section">
+                            <header className="docs-section__header">
+                                <span className="docs-section__icon" aria-hidden="true">
+                                    <section.icon size={18} />
+                                </span>
+                                <h2>{section.title}</h2>
+                            </header>
+
+                            <p className="docs-section__intro">{section.intro}</p>
+
+                            {section.paragraphs?.map((paragraph) => (
+                                <p key={paragraph} className="docs-section__paragraph">
+                                    {paragraph}
+                                </p>
+                            ))}
+
+                            {section.items && (
+                                <ul className="docs-section__list">
+                                    {section.items.map((item) => (
+                                        <li key={item}>{item}</li>
+                                    ))}
+                                </ul>
+                            )}
+
+                            {section.note && <p className="docs-section__note">{section.note}</p>}
+                        </section>
+                    ))}
                 </article>
             </main>
         </div>
