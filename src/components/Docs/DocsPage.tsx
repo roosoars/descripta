@@ -141,8 +141,6 @@ export default function DocsPage() {
                 </aside>
 
                 <article className="docs-article">
-                    <header className="docs-hero" />
-
                     <section id="inicio-rapido" className="docs-section docs-section--quickstart">
                         <header className="docs-section__header">
                             <span className="docs-section__icon" aria-hidden="true">
