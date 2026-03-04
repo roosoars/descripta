@@ -60,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const loginWithGithub = async () => {
         const provider = new GithubAuthProvider();
         provider.addScope('read:user');
+        provider.addScope('models:read');
 
         const result = await signInWithPopup(auth, provider);
         const credential = GithubAuthProvider.credentialFromResult(result);

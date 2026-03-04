@@ -160,6 +160,39 @@ describe('model-discovery', () => {
         expect(catalog[0].id).toBe('openai/gpt-4o');
     });
 
+    it('falls back to inference v1 models when primary endpoint returns 404', async () => {
+        const fetchSpy = vi.spyOn(globalThis, 'fetch')
+            .mockResolvedValueOnce(
+                new Response('404 page not found', { status: 404 })
+            )
+            .mockResolvedValueOnce(
+                new Response(
+                    JSON.stringify({
+                        data: [
+                            { id: 'openai/gpt-4.1-mini', name: 'OpenAI GPT-4.1-mini' },
+                        ],
+                    }),
+                    { status: 200 }
+                )
+            )
+            .mockRejectedValueOnce(new TypeError('Load failed'));
+
+        const catalog = await discoverGithubModelCatalog('github-token');
+
+        expect(catalog).toHaveLength(1);
+        expect(catalog[0].id).toBe('openai/gpt-4.1-mini');
+        expect(fetchSpy).toHaveBeenNthCalledWith(
+            1,
+            'https://models.github.ai/inference/models',
+            expect.any(Object)
+        );
+        expect(fetchSpy).toHaveBeenNthCalledWith(
+            2,
+            'https://models.github.ai/inference/v1/models',
+            expect.any(Object)
+        );
+    });
+
     it('uses fallback models when api key is empty', async () => {
         const models = await discoverProviderModels('openai', '');
         expect(models).toContain('gpt-4o');

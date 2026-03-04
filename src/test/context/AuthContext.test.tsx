@@ -47,6 +47,8 @@ const TestComponent = () => {
     );
 };
 
+const githubAddScopeMock = vi.fn();
+
 describe('AuthContext', () => {
     const mockGithubUser = {
         uid: '123',
@@ -58,9 +60,10 @@ describe('AuthContext', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         sessionStorage.clear();
+        githubAddScopeMock.mockReset();
 
         (firebaseAuth.GithubAuthProvider as unknown as Mock).mockImplementation(() => ({
-            addScope: vi.fn(),
+            addScope: githubAddScopeMock,
         }));
         (firebaseAuth.GoogleAuthProvider as unknown as Mock).mockImplementation(() => ({}));
         (firebaseAuth.GithubAuthProvider as unknown as { credentialFromResult: Mock }).credentialFromResult = vi.fn(() => ({
@@ -138,6 +141,8 @@ describe('AuthContext', () => {
         await waitFor(() => {
             expect(screen.getByTestId('github-token')).toHaveTextContent('gh-oauth-token');
         });
+        expect(githubAddScopeMock).toHaveBeenCalledWith('read:user');
+        expect(githubAddScopeMock).toHaveBeenCalledWith('models:read');
         expect(sessionStorage.getItem('github_oauth_token')).toBe('gh-oauth-token');
     });
 

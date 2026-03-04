@@ -111,9 +111,13 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                     : 'Falha ao carregar modelos do provedor.';
 
                 if (provider === 'github-models') {
-                    setModels([]);
+                    const githubFallback = getProviderFallbackModels('github-models');
+                    setModels(githubFallback);
                     setGithubCatalog([]);
                     localStorage.removeItem(GITHUB_MODELS_STORAGE_KEY);
+                    if (!githubFallback.includes(model) && githubFallback[0]) {
+                        setModel(githubFallback[0]);
+                    }
                 } else {
                     setModels(fallbackModels);
                     if (!fallbackModels.includes(model) && fallbackModels[0]) {

@@ -94,6 +94,7 @@ const COPILOT_MODEL_MULTIPLIERS: Array<{ pattern: RegExp; multiplier: CopilotMul
 ];
 
 const GITHUB_INFERENCE_MODELS_ENDPOINT = 'https://models.github.ai/inference/models';
+const GITHUB_INFERENCE_V1_MODELS_ENDPOINT = 'https://models.github.ai/inference/v1/models';
 const GITHUB_CATALOG_MODELS_ENDPOINT = 'https://models.github.ai/catalog/models';
 
 function dedupeAndSort(models: string[]): string[] {
@@ -120,6 +121,10 @@ async function buildProviderError(response: Response, fallback: string): Promise
 
     if (response.status === 403) {
         return detail || 'Acesso negado para listar modelos deste provedor.';
+    }
+
+    if (response.status === 404) {
+        return detail || 'Endpoint de modelos não encontrado para esta sessão/provedor.';
     }
 
     return detail || fallback;
@@ -270,21 +275,55 @@ export async function discoverGeminiModels(apiKey: string): Promise<string[]> {
 
 export async function discoverGithubModelCatalog(oauthToken: string): Promise<GithubCatalogModel[]> {
     try {
-        const inferenceResponse = await fetch(GITHUB_INFERENCE_MODELS_ENDPOINT, {
-            headers: {
-                Authorization: `Bearer ${oauthToken}`,
-                Accept: 'application/json',
-            },
-        });
+        let modelsFromInference: GithubCatalogModel[] = [];
+        let inferenceError: Error | null = null;
 
-        if (!inferenceResponse.ok) {
-            throw new Error(await buildProviderError(inferenceResponse, 'Falha ao carregar modelos do GitHub Models.'));
+        for (const endpoint of [GITHUB_INFERENCE_MODELS_ENDPOINT, GITHUB_INFERENCE_V1_MODELS_ENDPOINT]) {
+            try {
+                const inferenceResponse = await fetch(endpoint, {
+                    headers: {
+                        Authorization: `Bearer ${oauthToken}`,
+                        Accept: 'application/json',
+                    },
+                });
+
+                if (!inferenceResponse.ok) {
+                    inferenceError = new Error(
+                        await buildProviderError(inferenceResponse, 'Falha ao carregar modelos do GitHub Models.')
+                    );
+                    continue;
+                }
+
+                const inferencePayload = await inferenceResponse.json();
+                modelsFromInference = normalizeGithubInferencePayload(inferencePayload);
+                if (modelsFromInference.length > 0) {
+                    break;
+                }
+            } catch (error) {
+                inferenceError = error instanceof Error
+                    ? error
+                    : new Error('Falha de rede ao carregar modelos do GitHub Models.');
+            }
         }
 
-        const inferencePayload = await inferenceResponse.json();
-        const modelsFromInference = normalizeGithubInferencePayload(inferencePayload);
         if (modelsFromInference.length === 0) {
-            return [];
+            if (inferenceError) {
+                throw inferenceError;
+            }
+            return getProviderFallbackModels('github-models').map((id) => {
+                const multiplier = resolveCopilotMultiplier({ id, name: id });
+                return {
+                    id,
+                    name: id,
+                    publisher: '-',
+                    rateLimitTier: '-',
+                    supportedInputModalities: [],
+                    supportedOutputModalities: [],
+                    isVisionCapable: false,
+                    paidMultiplier: multiplier.paid,
+                    freeMultiplier: multiplier.free,
+                };
+            });
         }
 
         // The public catalog endpoint provides richer metadata, but may be blocked by browser CORS.
@@ -314,6 +353,9 @@ export async function discoverGithubModelCatalog(oauthToken: string): Promise<Gi
             return modelsFromInference;
         }
     } catch (error) {
+        if (error instanceof TypeError) {
+            throw new Error('Falha de rede/CORS ao listar modelos GitHub. Atualize a sessão GitHub e tente novamente.');
+        }
         if (error instanceof Error) {
             throw error;
         }
