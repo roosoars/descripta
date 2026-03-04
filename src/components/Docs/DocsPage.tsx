@@ -35,23 +35,36 @@ const DOCS_PAGES: DocsPageContent[] = [
     {
         title: 'Visão Geral',
         shortLabel: 'Início',
-        subtitle: 'Fluxo base do Descripta para gerar ALT text e descrições acessíveis com IA.',
+        subtitle: 'Guia completo do fluxo de trabalho para gerar ALT text e descrições acessíveis com IA.',
         icon: BookOpenText,
         sections: [
             {
-                heading: 'O que o aplicativo faz',
+                heading: 'Objetivo da aplicação',
                 items: [
-                    'Processa imagens em lote para gerar ALT text e descrição detalhada.',
-                    'Entrega metadados por resultado, como objetos detectados e confiança.',
-                    'Permite revisão e edição manual antes da publicação.',
+                    'Gerar ALT text para acessibilidade e SEO.',
+                    'Gerar descrição detalhada para leitura assistiva.',
+                    'Retornar metadados de apoio (objetos, presença de pessoas, cores dominantes e confiança).',
+                    'Permitir revisão manual antes do uso final.',
                 ],
             },
             {
-                heading: 'Fluxo recomendado',
+                heading: 'Fluxo recomendado de ponta a ponta',
                 items: [
-                    'Configurar provedor, modelo e idioma/estilo.',
-                    'Enviar as imagens no Workspace.',
-                    'Gerar, revisar, editar e exportar resultados.',
+                    'Entrar com Google ou GitHub.',
+                    'Abrir Configurações e escolher provedor/modelo.',
+                    'Definir idioma, estilo e glossário (opcional).',
+                    'Enviar imagens no Workspace e iniciar geração.',
+                    'Revisar/editar resultados e validar conteúdo.',
+                    'Exportar CSV e armazenar no seu fluxo interno.',
+                ],
+            },
+            {
+                heading: 'Persistência local (navegador)',
+                items: [
+                    'Chaves de API (Gemini/OpenAI), provider e modelo selecionado.',
+                    'Idioma, estilo e termos do glossário.',
+                    'Histórico de resultados.',
+                    'Token OAuth do GitHub Models em armazenamento de sessão.',
                 ],
             },
         ],
@@ -59,27 +72,43 @@ const DOCS_PAGES: DocsPageContent[] = [
     {
         title: 'Acesso e Autenticação',
         shortLabel: 'Acesso',
-        subtitle: 'Entrada pela home com login social integrado ao Firebase Authentication.',
+        subtitle: 'Entrada pela home com autenticação social e sessão de usuário.',
         icon: ShieldCheck,
         sections: [
             {
-                heading: 'Como entrar',
+                heading: 'Como entrar no sistema',
                 items: [
-                    'Clique em ENTRAR na home.',
-                    'Escolha login com Google ou GitHub.',
-                    'Após autenticar, o Workspace é carregado.',
+                    'Na home, clique em ENTRAR para abrir o modal de acesso.',
+                    'Escolha um provedor de login: Google ou GitHub.',
+                    'Após autenticar, o app redireciona para o Workspace.',
                 ],
             },
             {
-                heading: 'GitHub Models e OAuth',
-                text: 'Quando a conta está logada via GitHub, o provider GitHub Models pode usar autenticação OAuth da própria sessão GitHub.',
+                heading: 'Sessão e saída',
+                items: [
+                    'Enquanto a sessão estiver ativa, o usuário permanece autenticado.',
+                    'No header da área logada, o botão de logout encerra a sessão.',
+                    'Ao sair, dados de autenticação são limpos.',
+                ],
+            },
+            {
+                heading: 'GitHub Models com OAuth',
+                items: [
+                    'O provider GitHub Models aparece somente para conta autenticada via GitHub.',
+                    'O app usa token OAuth da sessão GitHub para listar modelos e processar prompts.',
+                    'Se o token expirar, use "Atualizar sessão GitHub" nas configurações.',
+                ],
+            },
+            {
+                heading: 'Privacidade operacional',
+                text: 'Não existe backend próprio para processar suas chaves: as credenciais são usadas no navegador para chamar os provedores selecionados.',
             },
         ],
     },
     {
         title: 'Configuração de Provedor e Modelo',
         shortLabel: 'Provider',
-        subtitle: 'Ajustes feitos em Settings para escolher engine, credencial e modelo ativo.',
+        subtitle: 'Configuração detalhada de engine, autenticação e seleção de modelo.',
         icon: SlidersHorizontal,
         sections: [
             {
@@ -91,14 +120,28 @@ const DOCS_PAGES: DocsPageContent[] = [
                 ],
             },
             {
-                heading: 'Descoberta de modelos',
-                text: 'OpenAI, Gemini e GitHub Models usam descoberta dinâmica de catálogo para listar modelos suportados pela credencial atual.',
+                heading: 'Como a lista de modelos é carregada',
+                items: [
+                    'OpenAI: descoberta dinâmica via API de modelos.',
+                    'Gemini: descoberta dinâmica filtrando modelos com suporte a geração de conteúdo.',
+                    'GitHub Models: catálogo dinâmico da conta autenticada via OAuth.',
+                    'Quando não há retorno no OpenAI/Gemini, o app usa fallback mínimo não depreciado.',
+                ],
             },
             {
                 heading: 'Credenciais',
                 items: [
-                    'Gemini e OpenAI: chave informada nas configurações.',
-                    'GitHub Models: token OAuth da sessão GitHub.',
+                    'Gemini: exige chave informada no campo de API key.',
+                    'OpenAI: exige chave informada no campo de API key.',
+                    'GitHub Models: usa OAuth da sessão GitHub, sem campo manual de PAT.',
+                ],
+            },
+            {
+                heading: 'Erros comuns de configuração',
+                items: [
+                    '401: credencial inválida para o provedor selecionado.',
+                    '403: conta sem permissão para listar ou usar modelos.',
+                    'Sem chave/token: o app não inicia o processamento.',
                 ],
             },
         ],
@@ -106,34 +149,57 @@ const DOCS_PAGES: DocsPageContent[] = [
     {
         title: 'Idioma, Estilo e Glossário',
         shortLabel: 'Prompt',
-        subtitle: 'Controles de saída textual aplicados ao prompt enviado ao modelo.',
+        subtitle: 'Controles aplicados diretamente ao prompt de geração.',
         icon: Languages,
         sections: [
             {
                 heading: 'Idioma',
-                items: ['Português (Brasil)', 'English (US)', 'Español'],
+                items: [
+                    'Português (Brasil)',
+                    'English (US)',
+                    'Español',
+                ],
             },
             {
                 heading: 'Estilo',
-                items: ['Conciso', 'Detalhado', 'Formal', 'Informal'],
+                items: [
+                    'Conciso: direto ao ponto (ALT com limite recomendado).',
+                    'Detalhado: descrição mais extensa e contextual.',
+                    'Formal: tom profissional.',
+                    'Informal: linguagem mais simples/casual.',
+                ],
             },
             {
                 heading: 'Glossário',
-                text: 'Termos adicionados no glossário são injetados no prompt e aplicados quando houver correspondência contextual.',
+                items: [
+                    'Você define pares termo -> definição para padronizar vocabulário.',
+                    'Os termos são injetados no prompt e aplicados quando houver correspondência contextual.',
+                    'O glossário fica salvo localmente e pode ser removido termo a termo.',
+                ],
+            },
+            {
+                heading: 'Regras internas do prompt',
+                items: [
+                    'O idioma selecionado é imposto para todos os campos textuais de saída.',
+                    'O estilo selecionado é aplicado em ALT e descrição.',
+                    'A resposta esperada é JSON estruturado (alt, description, metadata).',
+                ],
             },
         ],
     },
     {
         title: 'Upload e Processamento',
         shortLabel: 'Upload',
-        subtitle: 'Envio de arquivos e execução de geração em lote no Workspace.',
+        subtitle: 'Gerenciamento da fila de imagens e execução do lote.',
         icon: Upload,
         sections: [
             {
                 heading: 'Entrada de imagens',
                 items: [
                     'Clique na área de upload ou arraste e solte imagens.',
-                    'A fila exibe nome dos arquivos e permite remoção individual.',
+                    'Arquivos não-imagem são ignorados automaticamente.',
+                    'A fila mostra nome dos arquivos e permite remoção individual.',
+                    'Também existe ação para limpar toda a fila.',
                 ],
             },
             {
@@ -141,6 +207,23 @@ const DOCS_PAGES: DocsPageContent[] = [
                 items: [
                     'Clique em Gerar Descrições para iniciar o lote.',
                     'Acompanhe progresso por contador processado/total.',
+                    'Antes de iniciar, o app limpa os resultados atuais para mostrar apenas o lote novo.',
+                    'Se uma imagem falhar, as demais continuam no processamento.',
+                ],
+            },
+            {
+                heading: 'Pré-requisitos por provedor',
+                items: [
+                    'Gemini/OpenAI: chave precisa estar salva em Configurações.',
+                    'GitHub Models: sessão OAuth GitHub precisa estar válida.',
+                    'Sem credencial, o app exibe toast de erro e não inicia o lote.',
+                ],
+            },
+            {
+                heading: 'Saída do processamento',
+                items: [
+                    'Cada item processado entra em Resultados com ALT, descrição e metadados.',
+                    'Ao mesmo tempo, o item é registrado no Histórico.',
                 ],
             },
         ],
@@ -148,60 +231,105 @@ const DOCS_PAGES: DocsPageContent[] = [
     {
         title: 'Resultados e Edição',
         shortLabel: 'Resultados',
-        subtitle: 'Revisão dos textos gerados antes de uso final em produção.',
+        subtitle: 'Tela de revisão para garantir qualidade e consistência do conteúdo.',
         icon: PencilLine,
         sections: [
             {
-                heading: 'Ações no resultado',
+                heading: 'Ações disponíveis por card',
                 items: [
-                    'Editar ALT text.',
-                    'Copiar texto para clipboard.',
-                    'Visualizar conteúdo gerado e metadados.',
+                    'Mostrar/ocultar preview da imagem (quando disponível).',
+                    'Editar ALT text e salvar alteração.',
+                    'Copiar ALT text para clipboard.',
+                    'Expandir metadados do item.',
                 ],
             },
             {
-                heading: 'Recomendação',
-                text: 'Faça revisão humana em todos os textos antes de publicar em ambiente final.',
+                heading: 'Metadados exibidos',
+                items: [
+                    'Confiança da geração em percentual.',
+                    'Lista de objetos detectados (até 5 no card).',
+                    'Campos técnicos completos permanecem no objeto do resultado para exportação.',
+                ],
+            },
+            {
+                heading: 'Ações de lista',
+                items: [
+                    'Limpar todos os resultados da tela atual.',
+                    'Exportar CSV do conjunto carregado em Resultados.',
+                ],
+            },
+            {
+                heading: 'Recomendação operacional',
+                text: 'Faça revisão humana de todos os textos antes de publicar em produção ou em canais públicos.',
             },
         ],
     },
     {
         title: 'Histórico e Exportação',
         shortLabel: 'Histórico',
-        subtitle: 'Consulta de gerações anteriores e exportação de dados.',
+        subtitle: 'Consulta de execuções anteriores e formato de exportação disponível.',
         icon: History,
         sections: [
             {
-                heading: 'Histórico',
-                text: 'A aba Histórico mantém os itens gerados localmente para consulta durante a sessão.',
+                heading: 'Como o histórico funciona',
+                items: [
+                    'Cada resultado novo é adicionado automaticamente ao histórico local.',
+                    'A aba Histórico permite revisar itens gerados anteriormente.',
+                    'A ação Limpar Histórico remove todos os itens salvos localmente.',
+                ],
             },
             {
                 heading: 'Exportação',
-                items: ['Formato atual: CSV com arquivo, ALT text, descrição e confiança.'],
+                items: [
+                    'Formato atual: CSV.',
+                    'Colunas exportadas: Filename, Alt Text, Description, Confidence.',
+                    'O arquivo CSV é gerado no navegador e baixado localmente.',
+                ],
                 note: 'A exportação em JSON estará disponível nas próximas versões.',
+            },
+            {
+                heading: 'Boas práticas de uso',
+                items: [
+                    'Defina padrão de revisão antes de exportar dados.',
+                    'Mantenha rastreabilidade do lote (data, provider, modelo e idioma).',
+                    'Regenere itens com baixa confiança quando necessário.',
+                ],
             },
         ],
     },
     {
         title: 'Limites e Troubleshooting',
         shortLabel: 'Limites',
-        subtitle: 'Cenários comuns de falha e verificação rápida.',
+        subtitle: 'Diagnóstico rápido para falhas comuns de autenticação, modelo e processamento.',
         icon: TriangleAlert,
         sections: [
             {
-                heading: 'Falhas comuns',
+                heading: 'Falhas comuns por categoria',
                 items: [
-                    'Sem credencial válida, o processamento não inicia.',
-                    'Erros 401/403 indicam token/chave inválido ou sem permissão.',
-                    'Erros de quota/limite dependem do provedor selecionado.',
+                    'Autenticação: sem login ou sessão expirada (GitHub OAuth).',
+                    'Credencial: chave inválida para OpenAI/Gemini.',
+                    'Permissão: conta sem acesso ao catálogo/modelo selecionado.',
+                    'Quota: limite de uso atingido no provedor externo.',
+                    'Resposta inválida: erro de parsing do retorno do modelo.',
                 ],
             },
             {
-                heading: 'Checklist de diagnóstico',
+                heading: 'Checklist recomendado de diagnóstico',
                 items: [
-                    'Revisar provedor e modelo ativos.',
-                    'Validar autenticação/chave atual.',
-                    'Confirmar conectividade de rede antes de reenviar o lote.',
+                    'Confirmar login ativo e provider correto.',
+                    'Validar chave/tokens atuais em Configurações.',
+                    'Trocar o modelo para uma opção conhecida do mesmo provider.',
+                    'Testar com uma única imagem para isolar problema.',
+                    'Verificar conexão de rede e bloqueios de CORS/proxy no ambiente.',
+                    'Executar novo lote após atualizar credencial/sessão.',
+                ],
+            },
+            {
+                heading: 'Limitações atuais',
+                items: [
+                    'A exportação disponível atualmente é CSV.',
+                    'Edição manual no card altera ALT text (descrição permanece gerada).',
+                    'A execução depende da disponibilidade dos serviços externos (OpenAI, Gemini e GitHub Models).',
                 ],
             },
         ],
