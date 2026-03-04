@@ -434,20 +434,10 @@ function clamp(value: number, min: number, max: number) {
     return Math.max(min, Math.min(max, value));
 }
 
-function toSlug(text: string) {
-    return text
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-}
-
-function renderSection(section: DocsSection, id: string, index: number): ReactNode {
+function renderSection(section: DocsSection): ReactNode {
     return (
-        <section id={id} key={section.heading} className="docs-section">
+        <section key={section.heading} className="docs-section">
             <h2>
-                <span className="docs-section__number">{String(index + 1).padStart(2, '0')}</span>
                 {section.heading}
             </h2>
             {section.paragraphs?.map((paragraph) => (
@@ -479,15 +469,6 @@ export default function DocsPage() {
     const canGoNext = pageIndex < totalPages - 1;
     const progress = ((pageIndex + 1) / totalPages) * 100;
     const PageIcon = page.icon;
-    const sections = useMemo(
-        () =>
-            page.sections.map((section, index) => ({
-                section,
-                index,
-                id: `${toSlug(page.title)}-${toSlug(section.heading)}`,
-            })),
-        [page]
-    );
 
     const goToPage = (index: number) => {
         const nextIndex = clamp(index, 0, totalPages - 1);
@@ -532,8 +513,8 @@ export default function DocsPage() {
                                         aria-current={active ? 'page' : undefined}
                                         className={`docs-flow__marker ${active ? 'is-active' : ''}`}
                                     >
-                                        <span className="docs-flow__dot" aria-hidden="true" />
-                                        <span className="docs-flow__label">{docsPage.shortLabel}</span>
+                                        <span className="docs-flow__marker-number">{index + 1}</span>
+                                        <span className="docs-flow__marker-label">{docsPage.shortLabel}</span>
                                     </button>
                                 );
                             })}
@@ -562,25 +543,9 @@ export default function DocsPage() {
                     </div>
                 </header>
 
-                <div className="docs-layout">
-                    <aside className="docs-index" aria-label="Índice da página atual">
-                        <p className="docs-index__title">Nesta página</p>
-                        <ol className="docs-index__list">
-                            {sections.map(({ section, id, index }) => (
-                                <li key={id}>
-                                    <a className="docs-index__link" href={`#${id}`}>
-                                        <span className="docs-index__number">{String(index + 1).padStart(2, '0')}</span>
-                                        <span>{section.heading}</span>
-                                    </a>
-                                </li>
-                            ))}
-                        </ol>
-                    </aside>
-
-                    <article className="docs-article">
-                        {sections.map(({ section, id, index }) => renderSection(section, id, index))}
-                    </article>
-                </div>
+                <article className="docs-article">
+                    {page.sections.map(renderSection)}
+                </article>
             </main>
         </div>
     );

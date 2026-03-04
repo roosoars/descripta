@@ -34,16 +34,13 @@ export default function Login() {
             {/* Hero Section */}
             <div className="login__hero">
                 <div className="login__hero-content">
-
-
                     <h1 className="login__title">
-                        Acessibilidade com IA <br />
-                        para a Web Moderna
+                        ALT text e descrição <br />
+                        com clareza
                     </h1>
 
                     <p className="login__subtitle">
-                        Gere textos ALT e descrições de imagens precisas e otimizadas para SEO em segundos.
-                        Impulsionado por Google Gemini e OpenAI.
+                        Faça login, escolha o modelo e gere descrições acessíveis em segundos.
                     </p>
                 </div>
             </div>
