@@ -16,6 +16,7 @@ interface GeminiModelsResponse {
 
 interface GithubModelsResponse {
     data?: Array<{ id?: string }>;
+    models?: Array<{ id?: string; name?: string; model?: string; slug?: string }>;
 }
 
 function dedupeAndSort(models: string[]): string[] {
@@ -75,10 +76,15 @@ export async function discoverGeminiModels(apiKey: string): Promise<string[]> {
     return models.length > 0 ? models : getProviderFallbackModels('gemini');
 }
 
-export async function discoverGithubModels(apiKey: string): Promise<string[]> {
-    const response = await fetch('https://models.github.ai/inference/models', {
+function extractGithubModelId(item: { id?: string; name?: string; model?: string; slug?: string }): string {
+    return item.id || item.name || item.model || item.slug || '';
+}
+
+export async function discoverGithubModels(oauthToken: string): Promise<string[]> {
+    const response = await fetch('https://models.github.ai/catalog/models', {
         headers: {
-            Authorization: `Bearer ${apiKey}`,
+            Authorization: `Bearer ${oauthToken}`,
+            Accept: 'application/json',
         },
     });
 
@@ -86,17 +92,26 @@ export async function discoverGithubModels(apiKey: string): Promise<string[]> {
         throw new Error(toErrorMessage(response, 'Falha ao carregar modelos do GitHub Models.'));
     }
 
-    const data = (await response.json()) as GithubModelsResponse;
-    const models = dedupeAndSort((data.data || []).map((item) => item.id || ''));
+    const payload = await response.json();
+    const data = payload as GithubModelsResponse | Array<{ id?: string; name?: string; model?: string; slug?: string }>;
+
+    const rawModels = Array.isArray(data)
+        ? data
+        : data.models || data.data || [];
+
+    const models = dedupeAndSort(rawModels.map(extractGithubModelId));
     return models.length > 0 ? models : getProviderFallbackModels('github-models');
 }
 
-export async function discoverProviderModels(provider: AIProvider, apiKey: string): Promise<string[]> {
-    if (!apiKey.trim()) {
+export async function discoverProviderModels(provider: AIProvider, credential: string): Promise<string[]> {
+    if (!credential.trim()) {
+        if (provider === 'github-models') {
+            return [];
+        }
         return getProviderFallbackModels(provider);
     }
 
-    if (provider === 'openai') return discoverOpenAIModels(apiKey);
-    if (provider === 'gemini') return discoverGeminiModels(apiKey);
-    return discoverGithubModels(apiKey);
+    if (provider === 'openai') return discoverOpenAIModels(credential);
+    if (provider === 'gemini') return discoverGeminiModels(credential);
+    return discoverGithubModels(credential);
 }

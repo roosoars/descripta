@@ -12,12 +12,12 @@ import Input from '../UI/Input';
 import Button from '../UI/Button';
 import Badge from '../UI/Badge';
 import Glossary from './Glossary';
-import { Info } from 'lucide-react';
+import { Github, Info, KeyRound } from 'lucide-react';
 import { discoverProviderModels } from '../../services/model-discovery';
 import './Settings.css';
 
 export default function Settings({ onClose }: { onClose: () => void }) {
-    const { isGithubUser } = useAuth();
+    const { isGithubUser, githubAccessToken, loginWithGithub } = useAuth();
     const {
         apiKey,
         setApiKey,
@@ -36,15 +36,29 @@ export default function Settings({ onClose }: { onClose: () => void }) {
     const [models, setModels] = useState<string[]>(getProviderFallbackModels(provider));
     const [modelsLoading, setModelsLoading] = useState(false);
     const [modelsError, setModelsError] = useState('');
+    const [oauthLoading, setOauthLoading] = useState(false);
 
     useEffect(() => {
         const fallbackModels = getProviderFallbackModels(provider);
-        if (!localKey.trim()) {
+        const providerCredential = provider === 'github-models'
+            ? (githubAccessToken || '')
+            : localKey.trim();
+
+        if (!providerCredential) {
             setModelsLoading(false);
-            setModels(fallbackModels);
-            setModelsError('');
-            if (!fallbackModels.includes(model) && fallbackModels[0]) {
-                setModel(fallbackModels[0]);
+            if (provider === 'github-models') {
+                setModels([]);
+                setModelsError(
+                    isGithubUser
+                        ? 'Sessão GitHub sem token OAuth. Clique em "Atualizar sessão GitHub".'
+                        : 'Faça login com GitHub para carregar modelos disponíveis.'
+                );
+            } else {
+                setModels(fallbackModels);
+                setModelsError('');
+                if (!fallbackModels.includes(model) && fallbackModels[0]) {
+                    setModel(fallbackModels[0]);
+                }
             }
             return;
         }
@@ -52,7 +66,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
         setModelsLoading(true);
         const timeoutId = window.setTimeout(async () => {
             try {
-                const discoveredModels = await discoverProviderModels(provider, localKey.trim());
+                const discoveredModels = await discoverProviderModels(provider, providerCredential);
                 const activeModels = discoveredModels.length > 0 ? discoveredModels : fallbackModels;
                 setModels(activeModels);
                 setModelsError('');
@@ -78,7 +92,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
         return () => {
             clearTimeout(timeoutId);
         };
-    }, [provider, localKey, model, setModel]);
+    }, [provider, localKey, model, setModel, githubAccessToken, isGithubUser]);
 
     const handleProviderChange = (newProvider: AIProvider) => {
         setProvider(newProvider);
@@ -91,23 +105,49 @@ export default function Settings({ onClose }: { onClose: () => void }) {
     };
 
     const handleSave = () => {
+        if (provider === 'github-models') {
+            if (!githubAccessToken) {
+                setError('Sessão GitHub sem token OAuth. Atualize a autenticação do GitHub.');
+                return;
+            }
+            setError('');
+            onClose();
+            return;
+        }
+
         if (!localKey.trim()) {
             setError('A chave de API é obrigatória');
             return;
         }
-        setApiKey(localKey);
+        setApiKey(localKey.trim());
         setError('');
         onClose();
+    };
+
+    const handleReconnectGithub = async () => {
+        try {
+            setOauthLoading(true);
+            setError('');
+            setModelsError('');
+            await loginWithGithub();
+        } catch (reconnectError) {
+            const message = reconnectError instanceof Error
+                ? reconnectError.message
+                : 'Não foi possível atualizar a sessão GitHub.';
+            setModelsError(message);
+        } finally {
+            setOauthLoading(false);
+        }
     };
 
     const apiKeyLabel = provider === 'gemini'
         ? 'Chave da API Gemini'
         : provider === 'openai'
             ? 'Chave da API OpenAI'
-            : 'Token GitHub Models (PAT)';
+            : 'Token GitHub Models';
 
     const apiKeyPlaceholder = provider === 'github-models'
-        ? 'Insira seu token com models:read'
+        ? 'Autenticação feita por OAuth via login GitHub'
         : 'Insira sua chave de API';
 
     return (
@@ -186,6 +226,53 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                         {modelsError && <p className="settings-helper settings-helper--error">{modelsError}</p>}
                     </div>
 
+                    {provider === 'github-models' && (
+                        <div className="settings-oauth-card">
+                            <div className="settings-oauth-card__header">
+                                <div className="settings-oauth-card__title">
+                                    <Github size={18} />
+                                    <span>Autenticação GitHub Models</span>
+                                </div>
+                                <Badge variant={githubAccessToken ? 'success' : 'warning'} dot>
+                                    {githubAccessToken ? 'OAuth conectado' : 'OAuth pendente'}
+                                </Badge>
+                            </div>
+
+                            <p className="settings-helper">
+                                O GitHub Models usa o OAuth da sua sessão GitHub. Não é necessário inserir PAT neste fluxo.
+                            </p>
+
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={handleReconnectGithub}
+                                loading={oauthLoading}
+                                disabled={oauthLoading}
+                            >
+                                Atualizar sessão GitHub
+                            </Button>
+
+                            <div className="settings-model-catalog">
+                                <div className="settings-model-catalog__head">
+                                    <span>Modelos disponíveis na sua conta</span>
+                                    <Badge variant="info">{models.length}</Badge>
+                                </div>
+                                <div className="settings-model-catalog__list">
+                                    {models.map((availableModel) => (
+                                        <Badge key={availableModel} variant="default" size="sm">
+                                            {availableModel}
+                                        </Badge>
+                                    ))}
+                                    {models.length === 0 && (
+                                        <span className="settings-helper">
+                                            Nenhum modelo disponível no momento.
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Language Selection */}
                     <div className="form-group">
                         <label className="form-label">Idioma de Saída</label>
@@ -216,21 +303,27 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                     </div>
 
                     {/* API Key Input */}
-                    <Input
-                        label={apiKeyLabel}
-                        id="api-key"
-                        type="password"
-                        placeholder={apiKeyPlaceholder}
-                        value={localKey}
-                        onChange={(e) => setLocalKey(e.target.value)}
-                        error={error}
-                    />
+                    {provider !== 'github-models' && (
+                        <Input
+                            label={apiKeyLabel}
+                            id="api-key"
+                            type="password"
+                            placeholder={apiKeyPlaceholder}
+                            value={localKey}
+                            onChange={(e) => setLocalKey(e.target.value)}
+                            error={error}
+                        />
+                    )}
+
+                    {provider === 'github-models' && error && (
+                        <p className="settings-helper settings-helper--error">{error}</p>
+                    )}
 
                     {/* Info Box */}
                     <div className="settings-info">
-                        <Info size={16} />
+                        {provider === 'github-models' ? <Github size={16} /> : <Info size={16} />}
                         <span>
-                            Obtenha sua chave de API no{' '}
+                            {provider === 'github-models' ? 'Confira detalhes do GitHub Models em ' : 'Obtenha sua chave de API no '}
                             {provider === 'gemini' ? (
                                 <a
                                     href="https://aistudio.google.com/app/apikey"
@@ -253,7 +346,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
-                                    GitHub Models (PAT models:read)
+                                    GitHub Models
                                 </a>
                             )}
                         </span>
@@ -271,9 +364,25 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                                 <Badge variant="primary">{history.length}</Badge>
                             </div>
                             <div className="stat-item">
-                                <span className="stat-label">Status do Serviço</span>
-                                <Badge variant="success" dot>Operacional</Badge>
+                                <span className="stat-label">
+                                    {provider === 'github-models' ? 'Sessão OAuth' : 'Status do Serviço'}
+                                </span>
+                                <Badge
+                                    variant={provider === 'github-models' && !githubAccessToken ? 'warning' : 'success'}
+                                    dot
+                                >
+                                    {provider === 'github-models' && !githubAccessToken ? 'Requer login GitHub' : 'Operacional'}
+                                </Badge>
                             </div>
+                            {provider === 'github-models' && (
+                                <div className="stat-item">
+                                    <span className="stat-label">Modo de autenticação</span>
+                                    <Badge variant="info">
+                                        <KeyRound size={12} />
+                                        OAuth GitHub
+                                    </Badge>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

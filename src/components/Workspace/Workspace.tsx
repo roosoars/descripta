@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import { generateBatchDescriptions } from '../../services/ai-service';
 import Layout from '../Layout/Layout';
 import Results from '../Results/Results';
@@ -13,6 +14,7 @@ import './Workspace.css';
 
 export default function Workspace() {
     const { apiKey, provider, model, language, style, addResult, results, clearResults, showToast, glossary, showSettings, setShowSettings } = useApp();
+    const { githubAccessToken } = useAuth();
     const [files, setFiles] = useState<File[]>([]);
     const [isDragging, setIsDragging] = useState(false);
     const [processing, setProcessing] = useState(false);
@@ -49,7 +51,15 @@ export default function Workspace() {
 
     const handleProcess = async () => {
         if (files.length === 0) return;
-        if (!apiKey) {
+        const providerCredential = provider === 'github-models'
+            ? (githubAccessToken || '')
+            : apiKey;
+
+        if (!providerCredential) {
+            if (provider === 'github-models') {
+                showToast('Reconecte sua conta GitHub nas configurações para listar e usar GitHub Models.', 'error');
+                return;
+            }
             showToast('Configure sua chave de API primeiro!', 'error');
             return;
         }
@@ -64,7 +74,7 @@ export default function Workspace() {
             const newResults = await generateBatchDescriptions(
                 files,
                 provider,
-                apiKey,
+                providerCredential,
                 model,
                 language,
                 style,

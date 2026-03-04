@@ -4,7 +4,6 @@ import { AuthProvider, useAuth } from '../../context/AuthContext';
 import * as firebaseAuth from 'firebase/auth';
 import userEvent from '@testing-library/user-event';
 
-// Mock firebase services
 vi.mock('../../services/firebase', () => ({
     auth: {
         currentUser: null,
@@ -23,22 +22,33 @@ vi.mock('firebase/auth', async () => {
     };
 });
 
-// Helper component
 const TestComponent = () => {
-    const { user, loading, isGithubUser, loginWithGoogle, logout } = useAuth();
+    const {
+        user,
+        loading,
+        isGithubUser,
+        githubAccessToken,
+        loginWithGoogle,
+        loginWithGithub,
+        logout,
+    } = useAuth();
+
     if (loading) return <div>Loading...</div>;
+
     return (
         <div>
             {user ? <span data-testid="user-email">{user.email}</span> : <span>No User</span>}
             <span data-testid="is-github-user">{String(isGithubUser)}</span>
+            <span data-testid="github-token">{githubAccessToken || 'none'}</span>
             <button onClick={loginWithGoogle}>Login Google</button>
+            <button onClick={loginWithGithub}>Login GitHub</button>
             <button onClick={logout}>Logout</button>
         </div>
     );
 };
 
 describe('AuthContext', () => {
-    const mockUser = {
+    const mockGithubUser = {
         uid: '123',
         email: 'test@example.com',
         displayName: 'Test User',
@@ -47,13 +57,21 @@ describe('AuthContext', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        sessionStorage.clear();
+
+        (firebaseAuth.GithubAuthProvider as unknown as Mock).mockImplementation(() => ({
+            addScope: vi.fn(),
+        }));
+        (firebaseAuth.GoogleAuthProvider as unknown as Mock).mockImplementation(() => ({}));
+        (firebaseAuth.GithubAuthProvider as unknown as { credentialFromResult: Mock }).credentialFromResult = vi.fn(() => ({
+            accessToken: 'gh-oauth-token',
+        }));
     });
 
-    it('starts in loading state and updates when auth state resolves', async () => {
-        // Mock onAuthStateChanged to immediately return null (no user logged in initially)
+    it('starts in loading and resolves without user', async () => {
         (firebaseAuth.onAuthStateChanged as Mock).mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
             callback(null);
-            return () => { }; // unsubscribe
+            return () => { };
         });
 
         render(
@@ -62,15 +80,13 @@ describe('AuthContext', () => {
             </AuthProvider>
         );
 
-        // Initially loading (might be too fast to catch, but waitFor helps)
-        // Wait for loading to finish
         await waitFor(() => expect(screen.getByText('No User')).toBeInTheDocument());
-        expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+        expect(screen.getByTestId('github-token')).toHaveTextContent('none');
     });
 
-    it('sets user when onAuthStateChanged provides a user', async () => {
+    it('sets user and github flag when provider is github', async () => {
         (firebaseAuth.onAuthStateChanged as Mock).mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
-            callback(mockUser);
+            callback(mockGithubUser);
             return () => { };
         });
 
@@ -84,7 +100,7 @@ describe('AuthContext', () => {
         expect(screen.getByTestId('is-github-user')).toHaveTextContent('true');
     });
 
-    it('calls signInWithPopup when loginWithGoogle is called', async () => {
+    it('calls signInWithPopup when loginWithGoogle is used', async () => {
         (firebaseAuth.onAuthStateChanged as Mock).mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
             callback(null);
             return () => { };
@@ -97,18 +113,37 @@ describe('AuthContext', () => {
             </AuthProvider>
         );
 
-        await waitFor(() => expect(screen.getByText('No User')).toBeInTheDocument());
-
-        const loginButton = screen.getByText('Login Google');
-        await user.click(loginButton);
+        await user.click(screen.getByText('Login Google'));
 
         expect(firebaseAuth.signInWithPopup).toHaveBeenCalled();
         expect(firebaseAuth.GoogleAuthProvider).toHaveBeenCalled();
     });
 
-    it('calls signOut when logout is called', async () => {
+    it('captures github oauth token after loginWithGithub', async () => {
         (firebaseAuth.onAuthStateChanged as Mock).mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
-            callback(mockUser);
+            callback(null);
+            return () => { };
+        });
+        (firebaseAuth.signInWithPopup as Mock).mockResolvedValue({ providerId: 'github.com' });
+
+        const user = userEvent.setup();
+        render(
+            <AuthProvider>
+                <TestComponent />
+            </AuthProvider>
+        );
+
+        await user.click(screen.getByText('Login GitHub'));
+
+        await waitFor(() => {
+            expect(screen.getByTestId('github-token')).toHaveTextContent('gh-oauth-token');
+        });
+        expect(sessionStorage.getItem('github_oauth_token')).toBe('gh-oauth-token');
+    });
+
+    it('calls signOut when logout is used', async () => {
+        (firebaseAuth.onAuthStateChanged as Mock).mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
+            callback(mockGithubUser);
             return () => { };
         });
 
@@ -120,10 +155,7 @@ describe('AuthContext', () => {
         );
 
         await waitFor(() => expect(screen.getByTestId('user-email')).toHaveTextContent('test@example.com'));
-
-        const logoutButton = screen.getByText('Logout');
-        await user.click(logoutButton);
-
+        await user.click(screen.getByText('Logout'));
         expect(firebaseAuth.signOut).toHaveBeenCalled();
     });
 });

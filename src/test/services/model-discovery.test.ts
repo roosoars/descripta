@@ -47,12 +47,13 @@ describe('model-discovery', () => {
         expect(models).toEqual(['gemini-2.5-flash']);
     });
 
-    it('discovers GitHub models from inference endpoint', async () => {
+    it('discovers GitHub models from catalog endpoint', async () => {
         vi.spyOn(globalThis, 'fetch').mockResolvedValue(
             new Response(
-                JSON.stringify({
-                    data: [{ id: 'openai/gpt-4o' }, { id: 'openai/gpt-4.1-mini' }],
-                }),
+                JSON.stringify([
+                    { id: 'openai/gpt-4o' },
+                    { id: 'openai/gpt-4.1-mini' },
+                ]),
                 { status: 200 }
             )
         );
@@ -64,5 +65,10 @@ describe('model-discovery', () => {
     it('uses fallback models when api key is empty', async () => {
         const models = await discoverProviderModels('openai', '');
         expect(models).toContain('gpt-4o');
+    });
+
+    it('returns empty list for github-models when oauth token is missing', async () => {
+        const models = await discoverProviderModels('github-models', '');
+        expect(models).toEqual([]);
     });
 });

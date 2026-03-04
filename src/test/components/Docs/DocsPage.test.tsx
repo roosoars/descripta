@@ -18,10 +18,10 @@ describe('DocsPage', () => {
 
         expect(screen.getByText('Visão Geral')).toBeInTheDocument();
         expect(screen.getByText('Página 1 de 8')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Página anterior' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: /Página anterior/i })).toBeDisabled();
     });
 
-    it('navigates between pages with next and previous', async () => {
+    it('navigates between pages using next and previous buttons', async () => {
         const user = userEvent.setup();
         render(
             <MemoryRouter>
@@ -29,12 +29,25 @@ describe('DocsPage', () => {
             </MemoryRouter>
         );
 
-        await user.click(screen.getByRole('button', { name: 'Próxima página' }));
+        await user.click(screen.getByRole('button', { name: /Próxima página/i }));
         expect(screen.getByText('Acesso e Autenticação')).toBeInTheDocument();
         expect(screen.getByText('Página 2 de 8')).toBeInTheDocument();
 
-        await user.click(screen.getByRole('button', { name: 'Página anterior' }));
+        await user.click(screen.getByRole('button', { name: /Página anterior/i }));
         expect(screen.getByText('Visão Geral')).toBeInTheDocument();
+    });
+
+    it('navigates using page markers and highlights active marker', async () => {
+        const user = userEvent.setup();
+        render(
+            <MemoryRouter>
+                <DocsPage />
+            </MemoryRouter>
+        );
+
+        await user.click(screen.getByRole('button', { name: 'Ir para página 4' }));
+        expect(screen.getByText('Idioma, Estilo e Glossário')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Ir para página 4' })).toHaveAttribute('aria-current', 'page');
     });
 
     it('does not mention support or feature request', () => {

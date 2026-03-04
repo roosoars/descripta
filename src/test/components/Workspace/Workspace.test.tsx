@@ -1,13 +1,18 @@
-import { describe, it, expect, vi, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Workspace from '../../../components/Workspace/Workspace';
 import { useApp } from '../../../context/AppContext';
+import { useAuth } from '../../../context/AuthContext';
 import { generateBatchDescriptions } from '../../../services/ai-service';
 
 vi.mock('../../../context/AppContext', () => ({
     useApp: vi.fn(),
+}));
+
+vi.mock('../../../context/AuthContext', () => ({
+    useAuth: vi.fn(),
 }));
 
 vi.mock('../../../services/ai-service', () => ({
@@ -38,6 +43,13 @@ describe('Workspace', () => {
         showSettings: false,
         setShowSettings: vi.fn(),
     };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        (useAuth as unknown as Mock).mockReturnValue({
+            githubAccessToken: 'gh-oauth-token',
+        });
+    });
 
     it('renders upload zone initially', () => {
         (useApp as unknown as Mock).mockReturnValue(mockContext);
