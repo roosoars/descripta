@@ -16,8 +16,10 @@ interface AuthContextType {
     loading: boolean;
     isGithubUser: boolean;
     githubAccessToken: string | null;
+    githubSessionVersion: number;
     loginWithGoogle: () => Promise<void>;
     loginWithGithub: () => Promise<void>;
+    refreshGithubSession: () => Promise<void>;
     logout: () => Promise<void>;
 }
 
@@ -27,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [githubAccessToken, setGithubAccessToken] = useState<string | null>(() => sessionStorage.getItem(GITHUB_TOKEN_STORAGE_KEY));
+    const [githubSessionVersion, setGithubSessionVersion] = useState(0);
     const isGithubUser = user?.providerData?.some((provider) => provider.providerId === 'github.com') ?? false;
 
     const persistGithubToken = (token: string | null) => {
@@ -65,11 +68,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result = await signInWithPopup(auth, provider);
         const credential = GithubAuthProvider.credentialFromResult(result);
         persistGithubToken(credential?.accessToken ?? null);
+        setGithubSessionVersion((current) => current + 1);
+    };
+
+    const refreshGithubSession = async () => {
+        await loginWithGithub();
     };
 
     const logout = async () => {
         await signOut(auth);
         persistGithubToken(null);
+        setGithubSessionVersion((current) => current + 1);
     };
 
     return (
@@ -79,8 +88,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 loading,
                 isGithubUser,
                 githubAccessToken,
+                githubSessionVersion,
                 loginWithGoogle,
                 loginWithGithub,
+                refreshGithubSession,
                 logout,
             }}
         >

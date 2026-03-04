@@ -41,7 +41,9 @@ describe('Settings', () => {
         (useAuth as unknown as Mock).mockReturnValue({
             isGithubUser: true,
             githubAccessToken: 'gh-oauth-token',
+            githubSessionVersion: 0,
             loginWithGithub: vi.fn().mockResolvedValue(undefined),
+            refreshGithubSession: vi.fn().mockResolvedValue(undefined),
         });
         (discoverProviderModels as unknown as Mock).mockResolvedValue(['gemini-2.5-flash', 'gemini-2.5-pro']);
         (discoverGithubModelCatalog as unknown as Mock).mockResolvedValue([]);
@@ -59,7 +61,9 @@ describe('Settings', () => {
         (useAuth as unknown as Mock).mockReturnValue({
             isGithubUser: false,
             githubAccessToken: null,
+            githubSessionVersion: 0,
             loginWithGithub: vi.fn(),
+            refreshGithubSession: vi.fn(),
         });
 
         render(<Settings onClose={() => { }} />);
@@ -141,7 +145,7 @@ describe('Settings', () => {
     });
 
     it('allows refreshing github oauth session from settings', async () => {
-        const loginWithGithubMock = vi.fn().mockResolvedValue(undefined);
+        const refreshGithubSessionMock = vi.fn().mockResolvedValue(undefined);
         (useApp as unknown as Mock).mockReturnValue({
             ...baseContext,
             provider: 'github-models',
@@ -150,13 +154,15 @@ describe('Settings', () => {
         (useAuth as unknown as Mock).mockReturnValue({
             isGithubUser: true,
             githubAccessToken: null,
-            loginWithGithub: loginWithGithubMock,
+            githubSessionVersion: 0,
+            loginWithGithub: vi.fn(),
+            refreshGithubSession: refreshGithubSessionMock,
         });
 
         const user = userEvent.setup();
         render(<Settings onClose={() => { }} />);
 
-        await user.click(screen.getByText('Atualizar sessão GitHub'));
-        expect(loginWithGithubMock).toHaveBeenCalled();
+        await user.click(screen.getByText('Recarregar login GitHub'));
+        expect(refreshGithubSessionMock).toHaveBeenCalled();
     });
 });

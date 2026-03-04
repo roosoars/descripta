@@ -28,8 +28,10 @@ const TestComponent = () => {
         loading,
         isGithubUser,
         githubAccessToken,
+        githubSessionVersion,
         loginWithGoogle,
         loginWithGithub,
+        refreshGithubSession,
         logout,
     } = useAuth();
 
@@ -40,8 +42,10 @@ const TestComponent = () => {
             {user ? <span data-testid="user-email">{user.email}</span> : <span>No User</span>}
             <span data-testid="is-github-user">{String(isGithubUser)}</span>
             <span data-testid="github-token">{githubAccessToken || 'none'}</span>
+            <span data-testid="github-session-version">{githubSessionVersion}</span>
             <button onClick={loginWithGoogle}>Login Google</button>
             <button onClick={loginWithGithub}>Login GitHub</button>
+            <button onClick={refreshGithubSession}>Refresh GitHub</button>
             <button onClick={logout}>Logout</button>
         </div>
     );
@@ -162,5 +166,32 @@ describe('AuthContext', () => {
         await waitFor(() => expect(screen.getByTestId('user-email')).toHaveTextContent('test@example.com'));
         await user.click(screen.getByText('Logout'));
         expect(firebaseAuth.signOut).toHaveBeenCalled();
+    });
+
+    it('refreshes github session and bumps session version', async () => {
+        (firebaseAuth.onAuthStateChanged as Mock).mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
+            callback(mockGithubUser);
+            return () => { };
+        });
+        (firebaseAuth.signInWithPopup as Mock).mockResolvedValue({ providerId: 'github.com' });
+
+        const user = userEvent.setup();
+        render(
+            <AuthProvider>
+                <TestComponent />
+            </AuthProvider>
+        );
+
+        await waitFor(() => expect(screen.getByTestId('user-email')).toHaveTextContent('test@example.com'));
+        const before = Number(screen.getByTestId('github-session-version').textContent || '0');
+
+        await user.click(screen.getByText('Refresh GitHub'));
+        await waitFor(() => {
+            const after = Number(screen.getByTestId('github-session-version').textContent || '0');
+            expect(after).toBeGreaterThan(before);
+        });
+
+        expect(firebaseAuth.signInWithPopup).toHaveBeenCalled();
+        expect(githubAddScopeMock).toHaveBeenCalledWith('models:read');
     });
 });

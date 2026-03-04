@@ -23,7 +23,7 @@ import './Settings.css';
 const GITHUB_MODELS_STORAGE_KEY = 'github_models_catalog';
 
 export default function Settings({ onClose }: { onClose: () => void }) {
-    const { isGithubUser, githubAccessToken, loginWithGithub } = useAuth();
+    const { isGithubUser, githubAccessToken, githubSessionVersion, refreshGithubSession } = useAuth();
     const {
         apiKey,
         setApiKey,
@@ -65,7 +65,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                 localStorage.removeItem(GITHUB_MODELS_STORAGE_KEY);
                 setModelsError(
                     isGithubUser
-                        ? 'Sessão GitHub sem token OAuth. Clique em "Atualizar sessão GitHub".'
+                        ? 'Sessão GitHub sem token OAuth. Clique em "Recarregar login GitHub".'
                         : 'Faça login com GitHub para carregar modelos disponíveis.'
                 );
             } else {
@@ -134,7 +134,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
         return () => {
             clearTimeout(timeoutId);
         };
-    }, [provider, localKey, model, setModel, githubAccessToken, isGithubUser]);
+    }, [provider, localKey, model, setModel, githubAccessToken, isGithubUser, githubSessionVersion]);
 
     const handleProviderChange = (newProvider: AIProvider) => {
         setProvider(newProvider);
@@ -187,7 +187,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
             setOauthLoading(true);
             setError('');
             setModelsError('');
-            await loginWithGithub();
+            await refreshGithubSession();
         } catch (reconnectError) {
             const message = reconnectError instanceof Error
                 ? reconnectError.message
@@ -312,7 +312,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                                 loading={oauthLoading}
                                 disabled={oauthLoading}
                             >
-                                Atualizar sessão GitHub
+                                Recarregar login GitHub
                             </Button>
 
                             <div className="settings-model-catalog">
