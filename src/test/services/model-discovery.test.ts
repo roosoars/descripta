@@ -49,28 +49,56 @@ describe('model-discovery', () => {
     });
 
     it('discovers GitHub catalog models with multipliers and modalities', async () => {
-        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-            new Response(
-                JSON.stringify([
-                    {
-                        id: 'openai/gpt-4.1',
-                        name: 'OpenAI GPT-4.1',
-                        publisher: 'OpenAI',
-                        rate_limit_tier: 'high',
-                        supported_input_modalities: ['text', 'image'],
-                        supported_output_modalities: ['text'],
-                    },
-                ]),
-                { status: 200 }
+        const fetchSpy = vi.spyOn(globalThis, 'fetch')
+            .mockResolvedValueOnce(
+                new Response(
+                    JSON.stringify({
+                        data: [
+                            {
+                                id: 'openai/gpt-4.1',
+                                name: 'OpenAI GPT-4.1',
+                                owned_by: 'openai',
+                                supported_input_modalities: ['text', 'image'],
+                                supported_output_modalities: ['text'],
+                            },
+                        ],
+                    }),
+                    { status: 200 }
+                )
             )
-        );
+            .mockResolvedValueOnce(
+                new Response(
+                    JSON.stringify([
+                        {
+                            id: 'openai/gpt-4.1',
+                            name: 'OpenAI GPT-4.1',
+                            publisher: 'OpenAI',
+                            rate_limit_tier: 'high',
+                            supported_input_modalities: ['text', 'image'],
+                            supported_output_modalities: ['text'],
+                        },
+                    ]),
+                    { status: 200 }
+                )
+            );
 
         const catalog = await discoverGithubModelCatalog('github-token');
         expect(catalog[0].id).toBe('openai/gpt-4.1');
         expect(catalog[0].isVisionCapable).toBe(true);
         expect(catalog[0].paidMultiplier).toBe('0x');
         expect(catalog[0].freeMultiplier).toBe('1x');
-        expect(fetchSpy).toHaveBeenCalledWith(
+        expect(fetchSpy).toHaveBeenNthCalledWith(
+            1,
+            'https://models.github.ai/inference/models',
+            expect.objectContaining({
+                headers: expect.objectContaining({
+                    Authorization: 'Bearer github-token',
+                    Accept: 'application/json',
+                }),
+            })
+        );
+        expect(fetchSpy).toHaveBeenNthCalledWith(
+            2,
             'https://models.github.ai/catalog/models',
             expect.objectContaining({
                 headers: expect.objectContaining({
@@ -83,18 +111,53 @@ describe('model-discovery', () => {
     });
 
     it('returns GitHub model id list from catalog', async () => {
-        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-            new Response(
-                JSON.stringify([
-                    { id: 'openai/gpt-4o' },
-                    { id: 'openai/gpt-4.1-mini' },
-                ]),
-                { status: 200 }
+        vi.spyOn(globalThis, 'fetch')
+            .mockResolvedValueOnce(
+                new Response(
+                    JSON.stringify({
+                        data: [
+                            { id: 'openai/gpt-4o' },
+                            { id: 'openai/gpt-4.1-mini' },
+                        ],
+                    }),
+                    { status: 200 }
+                )
             )
-        );
+            .mockResolvedValueOnce(
+                new Response(
+                    JSON.stringify([
+                        { id: 'openai/gpt-4o' },
+                        { id: 'openai/gpt-4.1-mini' },
+                    ]),
+                    { status: 200 }
+                )
+            );
 
         const models = await discoverGithubModels('github-token');
         expect(models).toEqual(['openai/gpt-4.1-mini', 'openai/gpt-4o']);
+    });
+
+    it('keeps inference models when catalog endpoint fails (CORS/network)', async () => {
+        vi.spyOn(globalThis, 'fetch')
+            .mockResolvedValueOnce(
+                new Response(
+                    JSON.stringify({
+                        data: [
+                            {
+                                id: 'openai/gpt-4o',
+                                name: 'OpenAI GPT-4o',
+                                owned_by: 'openai',
+                            },
+                        ],
+                    }),
+                    { status: 200 }
+                )
+            )
+            .mockRejectedValueOnce(new TypeError('Load failed'));
+
+        const catalog = await discoverGithubModelCatalog('github-token');
+        expect(catalog).toHaveLength(1);
+        expect(catalog[0].id).toBe('openai/gpt-4o');
     });
 
     it('uses fallback models when api key is empty', async () => {
