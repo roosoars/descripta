@@ -12,6 +12,11 @@ import Badge from '../UI/Badge';
 import { Upload, X, Loader2 } from 'lucide-react';
 import './Workspace.css';
 
+interface StoredGithubModelMetadata {
+    id: string;
+    isVisionCapable?: boolean;
+}
+
 export default function Workspace() {
     const { apiKey, provider, model, language, style, addResult, results, clearResults, showToast, glossary, showSettings, setShowSettings } = useApp();
     const { githubAccessToken } = useAuth();
@@ -62,6 +67,22 @@ export default function Workspace() {
             }
             showToast('Configure sua chave de API primeiro!', 'error');
             return;
+        }
+
+        if (provider === 'github-models') {
+            const storedCatalogRaw = localStorage.getItem('github_models_catalog');
+            if (storedCatalogRaw) {
+                try {
+                    const storedCatalog = JSON.parse(storedCatalogRaw) as StoredGithubModelMetadata[];
+                    const selectedModelMetadata = storedCatalog.find((catalogModel) => catalogModel.id === model);
+                    if (selectedModelMetadata && selectedModelMetadata.isVisionCapable === false) {
+                        showToast('O modelo selecionado não aceita entrada de imagem. Escolha um modelo com suporte a imagem.', 'error');
+                        return;
+                    }
+                } catch {
+                    // Ignore catalog parsing issues and continue request flow.
+                }
+            }
         }
 
         // Limpar resultados anteriores para mostrar apenas os novos

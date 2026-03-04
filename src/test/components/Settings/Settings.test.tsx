@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import Settings from '../../../components/Settings/Settings';
 import { useApp } from '../../../context/AppContext';
 import { useAuth } from '../../../context/AuthContext';
-import { discoverProviderModels } from '../../../services/model-discovery';
+import { discoverGithubModelCatalog, discoverProviderModels } from '../../../services/model-discovery';
 
 vi.mock('../../../context/AppContext', () => ({
     useApp: vi.fn(),
@@ -16,6 +16,7 @@ vi.mock('../../../context/AuthContext', () => ({
 
 vi.mock('../../../services/model-discovery', () => ({
     discoverProviderModels: vi.fn(),
+    discoverGithubModelCatalog: vi.fn(),
 }));
 
 describe('Settings', () => {
@@ -43,6 +44,7 @@ describe('Settings', () => {
             loginWithGithub: vi.fn().mockResolvedValue(undefined),
         });
         (discoverProviderModels as unknown as Mock).mockResolvedValue(['gemini-2.5-flash', 'gemini-2.5-pro']);
+        (discoverGithubModelCatalog as unknown as Mock).mockResolvedValue([]);
     });
 
     it('renders provider options including GitHub Models for GitHub users', () => {
@@ -102,19 +104,40 @@ describe('Settings', () => {
             provider: 'github-models',
             model: 'openai/gpt-4o',
         });
-        (discoverProviderModels as unknown as Mock).mockResolvedValue([
-            'openai/gpt-4o',
-            'openai/gpt-4.1-mini',
+        (discoverGithubModelCatalog as unknown as Mock).mockResolvedValue([
+            {
+                id: 'openai/gpt-4o',
+                name: 'OpenAI GPT-4o',
+                publisher: 'OpenAI',
+                rateLimitTier: 'high',
+                supportedInputModalities: ['text', 'image'],
+                supportedOutputModalities: ['text'],
+                isVisionCapable: true,
+                paidMultiplier: '0x',
+                freeMultiplier: '1x',
+            },
+            {
+                id: 'openai/gpt-4.1-mini',
+                name: 'OpenAI GPT-4.1-mini',
+                publisher: 'OpenAI',
+                rateLimitTier: 'high',
+                supportedInputModalities: ['text', 'image'],
+                supportedOutputModalities: ['text'],
+                isVisionCapable: true,
+                paidMultiplier: '0x',
+                freeMultiplier: '1x',
+            },
         ]);
 
         render(<Settings onClose={() => { }} />);
 
         await waitFor(() => {
-            expect(discoverProviderModels).toHaveBeenCalledWith('github-models', 'gh-oauth-token');
+            expect(discoverGithubModelCatalog).toHaveBeenCalledWith('gh-oauth-token');
         });
         expect(screen.queryByPlaceholderText('Insira sua chave de API')).not.toBeInTheDocument();
         expect(screen.getByText('Modelos disponíveis na sua conta')).toBeInTheDocument();
         expect(screen.getAllByText('openai/gpt-4.1-mini').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Paid 0x').length).toBeGreaterThan(0);
     });
 
     it('allows refreshing github oauth session from settings', async () => {

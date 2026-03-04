@@ -125,6 +125,7 @@ const DOCS_PAGES: DocsPageContent[] = [
                     'OpenAI: descoberta dinâmica via API de modelos.',
                     'Gemini: descoberta dinâmica filtrando modelos com suporte a geração de conteúdo.',
                     'GitHub Models: catálogo dinâmico da conta autenticada via OAuth.',
+                    'GitHub Models: exibe multiplicadores de uso (paid/free) por modelo quando disponíveis.',
                     'Quando não há retorno no OpenAI/Gemini, o app usa fallback mínimo não depreciado.',
                 ],
             },
