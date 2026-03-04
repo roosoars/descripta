@@ -15,26 +15,26 @@ describe('DocsPage', () => {
             </MemoryRouter>
         );
 
-        expect(screen.getByText('Guia de uso do Descripta')).toBeInTheDocument();
+        expect(screen.queryByRole('heading', { name: 'Guia Definitivo do Descripta' })).not.toBeInTheDocument();
+        expect(screen.queryByText(/Guia completo para configurar autenticação/i)).not.toBeInTheDocument();
         expect(screen.getByRole('heading', { name: 'Início Rápido' })).toBeInTheDocument();
         expect(screen.getByRole('heading', { name: 'Visão Geral' })).toBeInTheDocument();
         expect(screen.getByRole('heading', { name: 'Acesso e Autenticação' })).toBeInTheDocument();
     });
 
-    it('renders sidebar and outline links for section anchors', () => {
+    it('renders sidebar links for section anchors and removes "Nesta página"', () => {
         render(
             <MemoryRouter>
                 <DocsPage />
             </MemoryRouter>
         );
 
-        const quickStartLinks = screen.getAllByRole('link', { name: 'Início Rápido' });
-        expect(quickStartLinks.length).toBeGreaterThan(0);
-        expect(quickStartLinks[0]).toHaveAttribute('href', '#inicio-rapido');
+        const quickStartLink = screen.getByRole('link', { name: 'Início Rápido' });
+        expect(quickStartLink).toHaveAttribute('href', '#inicio-rapido');
 
-        const overviewLinks = screen.getAllByRole('link', { name: 'Visão Geral' });
-        expect(overviewLinks.length).toBeGreaterThan(0);
-        expect(overviewLinks[0]).toHaveAttribute('href', '#visao-geral');
+        const overviewLink = screen.getByRole('link', { name: 'Visão Geral' });
+        expect(overviewLink).toHaveAttribute('href', '#visao-geral');
+        expect(screen.queryByText('Nesta página')).not.toBeInTheDocument();
     });
 
     it('does not render legacy page navigation controls', () => {
@@ -56,7 +56,8 @@ describe('DocsPage', () => {
             </MemoryRouter>
         );
 
-        expect(screen.queryByText(/SUPORTE/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/^SUPORTE$/i)).not.toBeInTheDocument();
         expect(screen.queryByText(/SOLICITAR FUNCIONALIDADE/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/\/contato/i)).not.toBeInTheDocument();
     });
 });
