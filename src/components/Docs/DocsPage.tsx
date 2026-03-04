@@ -18,7 +18,7 @@ import './DocsPage.css';
 
 interface DocsSection {
     heading: string;
-    text?: string;
+    paragraphs?: string[];
     items?: string[];
     note?: string;
 }
@@ -35,20 +35,26 @@ const DOCS_PAGES: DocsPageContent[] = [
     {
         title: 'Visão Geral',
         shortLabel: 'Início',
-        subtitle: 'Guia completo do fluxo de trabalho para gerar ALT text e descrições acessíveis com IA.',
+        subtitle: 'Fluxo completo para gerar ALT text e descrições acessíveis com revisão humana.',
         icon: BookOpenText,
         sections: [
             {
                 heading: 'Objetivo da aplicação',
+                paragraphs: [
+                    'O Descripta foi criado para acelerar produção de conteúdo acessível para imagens, mantendo revisão manual antes da publicação.',
+                ],
                 items: [
                     'Gerar ALT text para acessibilidade e SEO.',
                     'Gerar descrição detalhada para leitura assistiva.',
-                    'Retornar metadados de apoio (objetos, presença de pessoas, cores dominantes e confiança).',
+                    'Retornar metadados de apoio (objetos, presença de pessoas, cores dominantes e confiança estimada).',
                     'Permitir revisão manual antes do uso final.',
                 ],
             },
             {
                 heading: 'Fluxo recomendado de ponta a ponta',
+                paragraphs: [
+                    'A aplicação foi organizada para que a configuração seja feita uma vez e o processamento ocorra em lote no Workspace.',
+                ],
                 items: [
                     'Entrar com Google ou GitHub.',
                     'Abrir Configurações e escolher provedor/modelo.',
@@ -60,11 +66,22 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Persistência local (navegador)',
+                paragraphs: [
+                    'Dados de configuração são persistidos no navegador para evitar retrabalho entre sessões.',
+                ],
                 items: [
                     'Chaves de API (Gemini/OpenAI), provider e modelo selecionado.',
                     'Idioma, estilo e termos do glossário.',
                     'Histórico de resultados.',
                     'Token OAuth do GitHub Models em armazenamento de sessão.',
+                ],
+            },
+            {
+                heading: 'Limites importantes',
+                items: [
+                    'O resultado depende da disponibilidade dos provedores externos.',
+                    'A qualidade do texto pode variar por modelo, idioma e tipo de imagem.',
+                    'Sempre valide o conteúdo final antes de publicar.',
                 ],
             },
         ],
@@ -77,6 +94,9 @@ const DOCS_PAGES: DocsPageContent[] = [
         sections: [
             {
                 heading: 'Como entrar no sistema',
+                paragraphs: [
+                    'A entrada é feita pela home. Após autenticação bem-sucedida, o app carrega o Workspace automaticamente.',
+                ],
                 items: [
                     'Na home, clique em ENTRAR para abrir o modal de acesso.',
                     'Escolha um provedor de login: Google ou GitHub.',
@@ -85,6 +105,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Sessão e saída',
+                paragraphs: [
+                    'A sessão de autenticação controla o acesso à área principal e aos recursos dependentes de login.',
+                ],
                 items: [
                     'Enquanto a sessão estiver ativa, o usuário permanece autenticado.',
                     'No header da área logada, o botão de logout encerra a sessão.',
@@ -93,6 +116,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'GitHub Models com OAuth',
+                paragraphs: [
+                    'A integração com GitHub Models depende da sessão OAuth do próprio login GitHub.',
+                ],
                 items: [
                     'O provider GitHub Models aparece somente para conta autenticada via GitHub.',
                     'O app usa token OAuth da sessão GitHub para listar modelos e processar prompts.',
@@ -101,7 +127,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Privacidade operacional',
-                text: 'Não existe backend próprio para processar suas chaves: as credenciais são usadas no navegador para chamar os provedores selecionados.',
+                paragraphs: [
+                    'Não existe backend próprio para processar chaves de OpenAI/Gemini: as credenciais são usadas no navegador para chamar os provedores selecionados.',
+                ],
             },
         ],
     },
@@ -113,6 +141,9 @@ const DOCS_PAGES: DocsPageContent[] = [
         sections: [
             {
                 heading: 'Provedores disponíveis',
+                paragraphs: [
+                    'A seleção do provedor define autenticação, catálogo de modelos e endpoint utilizado no processamento.',
+                ],
                 items: [
                     'Google Gemini',
                     'OpenAI',
@@ -121,6 +152,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Como a lista de modelos é carregada',
+                paragraphs: [
+                    'A lista é dinâmica para reduzir risco de modelos indisponíveis ou descontinuados.',
+                ],
                 items: [
                     'OpenAI: descoberta dinâmica via API de modelos.',
                     'Gemini: descoberta dinâmica filtrando modelos com suporte a geração de conteúdo.',
@@ -131,6 +165,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Credenciais',
+                paragraphs: [
+                    'Cada provedor exige um tipo de autenticação específico. Sem credencial válida, o lote não inicia.',
+                ],
                 items: [
                     'Gemini: exige chave informada no campo de API key.',
                     'OpenAI: exige chave informada no campo de API key.',
@@ -139,6 +176,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Erros comuns de configuração',
+                paragraphs: [
+                    'As mensagens de erro indicam o tipo de bloqueio mais provável para agilizar correção.',
+                ],
                 items: [
                     '401: credencial inválida para o provedor selecionado.',
                     '403: conta sem permissão para listar ou usar modelos.',
@@ -155,6 +195,9 @@ const DOCS_PAGES: DocsPageContent[] = [
         sections: [
             {
                 heading: 'Idioma',
+                paragraphs: [
+                    'O idioma escolhido orienta o texto de ALT e descrição retornados pelo modelo.',
+                ],
                 items: [
                     'Português (Brasil)',
                     'English (US)',
@@ -163,6 +206,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Estilo',
+                paragraphs: [
+                    'O estilo altera a densidade e o tom do conteúdo gerado.',
+                ],
                 items: [
                     'Conciso: direto ao ponto (ALT com limite recomendado).',
                     'Detalhado: descrição mais extensa e contextual.',
@@ -172,6 +218,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Glossário',
+                paragraphs: [
+                    'O glossário ajuda a manter consistência terminológica em lotes grandes e com várias pessoas revisando.',
+                ],
                 items: [
                     'Você define pares termo -> definição para padronizar vocabulário.',
                     'Os termos são injetados no prompt e aplicados quando houver correspondência contextual.',
@@ -180,6 +229,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Regras internas do prompt',
+                paragraphs: [
+                    'O app estrutura o prompt para manter saída previsível entre provedores e modelos diferentes.',
+                ],
                 items: [
                     'O idioma selecionado é imposto para todos os campos textuais de saída.',
                     'O estilo selecionado é aplicado em ALT e descrição.',
@@ -196,6 +248,9 @@ const DOCS_PAGES: DocsPageContent[] = [
         sections: [
             {
                 heading: 'Entrada de imagens',
+                paragraphs: [
+                    'A fila do Workspace foi pensada para lote: adicionar, revisar nomes e remover itens antes de processar.',
+                ],
                 items: [
                     'Clique na área de upload ou arraste e solte imagens.',
                     'Arquivos não-imagem são ignorados automaticamente.',
@@ -205,6 +260,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Processamento',
+                paragraphs: [
+                    'O processamento ocorre imagem por imagem, com progresso visível em tempo real.',
+                ],
                 items: [
                     'Clique em Gerar Descrições para iniciar o lote.',
                     'Acompanhe progresso por contador processado/total.',
@@ -214,6 +272,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Pré-requisitos por provedor',
+                paragraphs: [
+                    'Valide credenciais e sessão antes de iniciar para evitar retrabalho.',
+                ],
                 items: [
                     'Gemini/OpenAI: chave precisa estar salva em Configurações.',
                     'GitHub Models: sessão OAuth GitHub precisa estar válida.',
@@ -222,6 +283,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Saída do processamento',
+                paragraphs: [
+                    'Resultado e histórico são atualizados durante o lote para facilitar revisão incremental.',
+                ],
                 items: [
                     'Cada item processado entra em Resultados com ALT, descrição e metadados.',
                     'Ao mesmo tempo, o item é registrado no Histórico.',
@@ -237,6 +301,9 @@ const DOCS_PAGES: DocsPageContent[] = [
         sections: [
             {
                 heading: 'Ações disponíveis por card',
+                paragraphs: [
+                    'A revisão é feita diretamente nos cards para reduzir troca de contexto.',
+                ],
                 items: [
                     'Mostrar/ocultar preview da imagem (quando disponível).',
                     'Editar ALT text e salvar alteração.',
@@ -246,6 +313,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Metadados exibidos',
+                paragraphs: [
+                    'Os metadados ajudam a priorizar revisão de itens com menor confiança.',
+                ],
                 items: [
                     'Confiança da geração em percentual.',
                     'Lista de objetos detectados (até 5 no card).',
@@ -254,6 +324,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Ações de lista',
+                paragraphs: [
+                    'As ações de lista afetam todos os cards carregados na visualização atual.',
+                ],
                 items: [
                     'Limpar todos os resultados da tela atual.',
                     'Exportar CSV do conjunto carregado em Resultados.',
@@ -261,7 +334,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Recomendação operacional',
-                text: 'Faça revisão humana de todos os textos antes de publicar em produção ou em canais públicos.',
+                paragraphs: [
+                    'Faça revisão humana de todos os textos antes de publicar em produção ou em canais públicos.',
+                ],
             },
         ],
     },
@@ -273,14 +348,20 @@ const DOCS_PAGES: DocsPageContent[] = [
         sections: [
             {
                 heading: 'Como o histórico funciona',
+                paragraphs: [
+                    'O histórico permite revisar conteúdo gerado anteriormente sem depender de novo processamento.',
+                ],
                 items: [
                     'Cada resultado novo é adicionado automaticamente ao histórico local.',
-                    'A aba Histórico permite revisar itens gerados anteriormente.',
+                    'Cada item pode ser expandido para visualizar ALT e descrição completos.',
                     'A ação Limpar Histórico remove todos os itens salvos localmente.',
                 ],
             },
             {
                 heading: 'Exportação',
+                paragraphs: [
+                    'A exportação atual é focada em integração simples com planilhas e fluxos internos.',
+                ],
                 items: [
                     'Formato atual: CSV.',
                     'Colunas exportadas: Filename, Alt Text, Description, Confidence.',
@@ -290,6 +371,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Boas práticas de uso',
+                paragraphs: [
+                    'A rastreabilidade do lote reduz retrabalho e melhora consistência editorial.',
+                ],
                 items: [
                     'Defina padrão de revisão antes de exportar dados.',
                     'Mantenha rastreabilidade do lote (data, provider, modelo e idioma).',
@@ -306,6 +390,9 @@ const DOCS_PAGES: DocsPageContent[] = [
         sections: [
             {
                 heading: 'Falhas comuns por categoria',
+                paragraphs: [
+                    'Os problemas mais recorrentes estão ligados a autenticação, permissão e limites da conta no provedor externo.',
+                ],
                 items: [
                     'Autenticação: sem login ou sessão expirada (GitHub OAuth).',
                     'Credencial: chave inválida para OpenAI/Gemini.',
@@ -316,6 +403,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Checklist recomendado de diagnóstico',
+                paragraphs: [
+                    'Siga os passos na ordem para reduzir tempo de investigação.',
+                ],
                 items: [
                     'Confirmar login ativo e provider correto.',
                     'Validar chave/tokens atuais em Configurações.',
@@ -327,6 +417,9 @@ const DOCS_PAGES: DocsPageContent[] = [
             },
             {
                 heading: 'Limitações atuais',
+                paragraphs: [
+                    'Estas limitações refletem o comportamento atual da aplicação no estado desta versão.',
+                ],
                 items: [
                     'A exportação disponível atualmente é CSV.',
                     'Edição manual no card altera ALT text (descrição permanece gerada).',
@@ -341,13 +434,27 @@ function clamp(value: number, min: number, max: number) {
     return Math.max(min, Math.min(max, value));
 }
 
-function renderSection(section: DocsSection): ReactNode {
+function toSlug(text: string) {
+    return text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+}
+
+function renderSection(section: DocsSection, id: string, index: number): ReactNode {
     return (
-        <section key={section.heading} className="docs-section">
-            <h2>{section.heading}</h2>
-            {section.text && <p>{section.text}</p>}
+        <section id={id} key={section.heading} className="docs-section">
+            <h2>
+                <span className="docs-section__number">{String(index + 1).padStart(2, '0')}</span>
+                {section.heading}
+            </h2>
+            {section.paragraphs?.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+            ))}
             {section.items && (
-                <ul>
+                <ul className="docs-section__list">
                     {section.items.map((item) => (
                         <li key={item}>{item}</li>
                     ))}
@@ -372,6 +479,15 @@ export default function DocsPage() {
     const canGoNext = pageIndex < totalPages - 1;
     const progress = ((pageIndex + 1) / totalPages) * 100;
     const PageIcon = page.icon;
+    const sections = useMemo(
+        () =>
+            page.sections.map((section, index) => ({
+                section,
+                index,
+                id: `${toSlug(page.title)}-${toSlug(section.heading)}`,
+            })),
+        [page]
+    );
 
     const goToPage = (index: number) => {
         const nextIndex = clamp(index, 0, totalPages - 1);
@@ -384,42 +500,27 @@ export default function DocsPage() {
             <PublicNav fixed brandLabel="DESCRIPTA DOCS" />
 
             <main className="docs-main">
-                <article className="docs-card">
-                    <div className="docs-progress">
-                        <span className="docs-progress__label">Página {pageIndex + 1} de {totalPages}</span>
-                        <div className="docs-progress__track" aria-hidden="true">
-                            <span className="docs-progress__fill" style={{ width: `${progress}%` }} />
+                <header className="docs-header">
+                    <div className="docs-header__top">
+                        <span className="docs-header__counter">Página {pageIndex + 1} de {totalPages}</span>
+                        <div className="docs-header__track" aria-hidden="true">
+                            <span className="docs-header__fill" style={{ width: `${progress}%` }} />
                         </div>
                     </div>
 
-                    <header className="docs-hero">
-                        <div className="docs-hero__icon" aria-hidden="true">
-                            <PageIcon size={22} />
-                        </div>
-                        <div className="docs-hero__text">
-                            <p className="docs-hero__kicker">Documentação do Usuário</p>
-                            <h1>{page.title}</h1>
-                            <p>{page.subtitle}</p>
-                        </div>
-                    </header>
-
-                    <div className="docs-content">
-                        {page.sections.map(renderSection)}
-                    </div>
-
-                    <nav className="docs-pagination" aria-label="Navegação de páginas da documentação">
+                    <nav className="docs-flow" aria-label="Navegação de páginas da documentação">
                         <button
                             type="button"
                             onClick={() => goToPage(pageIndex - 1)}
                             disabled={!canGoPrev}
                             aria-label="Página anterior"
-                            className="docs-pagination__nav"
+                            className="docs-flow__arrow"
                         >
                             <ChevronLeft size={18} />
                             <span>{'<'} Anterior</span>
                         </button>
 
-                        <div className="docs-pagination__markers">
+                        <div className="docs-flow__markers">
                             {DOCS_PAGES.map((docsPage, index) => {
                                 const active = index === pageIndex;
                                 return (
@@ -429,12 +530,10 @@ export default function DocsPage() {
                                         onClick={() => goToPage(index)}
                                         aria-label={`Ir para página ${index + 1}`}
                                         aria-current={active ? 'page' : undefined}
-                                        className={`docs-pagination__marker ${active ? 'is-active' : ''}`}
+                                        className={`docs-flow__marker ${active ? 'is-active' : ''}`}
                                     >
-                                        <span className="docs-pagination__marker-number">
-                                            {String(index + 1).padStart(2, '0')}
-                                        </span>
-                                        <span className="docs-pagination__marker-label">{docsPage.shortLabel}</span>
+                                        <span className="docs-flow__dot" aria-hidden="true" />
+                                        <span className="docs-flow__label">{docsPage.shortLabel}</span>
                                     </button>
                                 );
                             })}
@@ -445,13 +544,43 @@ export default function DocsPage() {
                             onClick={() => goToPage(pageIndex + 1)}
                             disabled={!canGoNext}
                             aria-label="Próxima página"
-                            className="docs-pagination__nav"
+                            className="docs-flow__arrow docs-flow__arrow--next"
                         >
                             <span>Próxima {'>'}</span>
                             <ChevronRight size={18} />
                         </button>
                     </nav>
-                </article>
+
+                    <div className="docs-header__hero">
+                        <div className="docs-header__icon" aria-hidden="true">
+                            <PageIcon size={22} />
+                        </div>
+                        <div className="docs-header__text">
+                            <h1>{page.title}</h1>
+                            <p>{page.subtitle}</p>
+                        </div>
+                    </div>
+                </header>
+
+                <div className="docs-layout">
+                    <aside className="docs-index" aria-label="Índice da página atual">
+                        <p className="docs-index__title">Nesta página</p>
+                        <ol className="docs-index__list">
+                            {sections.map(({ section, id, index }) => (
+                                <li key={id}>
+                                    <a className="docs-index__link" href={`#${id}`}>
+                                        <span className="docs-index__number">{String(index + 1).padStart(2, '0')}</span>
+                                        <span>{section.heading}</span>
+                                    </a>
+                                </li>
+                            ))}
+                        </ol>
+                    </aside>
+
+                    <article className="docs-article">
+                        {sections.map(({ section, id, index }) => renderSection(section, id, index))}
+                    </article>
+                </div>
             </main>
         </div>
     );
