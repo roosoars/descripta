@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { PenTool, Zap, Shield, Globe, Code2 } from 'lucide-react';
 import Button from '../UI/Button';
 import Modal from '../UI/Modal';
+import PublicNav from '../PublicNav/PublicNav';
 import './Login.css';
 
 export default function Login() {
@@ -28,33 +29,18 @@ export default function Login() {
     return (
         <div className="login">
             {/* Navigation */}
-            <nav className="login__nav">
-                <div className="login__nav-brand">
-                    <PenTool size={24} />
-                    <span>DESCRIPTA</span>
-                </div>
-                <Button
-                    variant="primary"
-                    size="md"
-                    onClick={() => setShowLoginModal(true)}
-                >
-                    Acessar
-                </Button>
-            </nav>
+            <PublicNav onAccessClick={() => setShowLoginModal(true)} />
 
             {/* Hero Section */}
             <div className="login__hero">
                 <div className="login__hero-content">
-
-
                     <h1 className="login__title">
-                        Acessibilidade com IA <br />
-                        para a Web Moderna
+                        Descrição de imagens <br />
+                        com IA
                     </h1>
 
                     <p className="login__subtitle">
-                        Gere textos ALT e descrições de imagens precisas e otimizadas para SEO em segundos.
-                        Impulsionado por Google Gemini e OpenAI.
+                        Rápido, direto e no seu idioma.
                     </p>
                 </div>
             </div>

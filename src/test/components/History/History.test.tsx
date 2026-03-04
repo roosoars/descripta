@@ -33,6 +33,31 @@ describe('History', () => {
         expect(screen.getByText('img1.png')).toBeInTheDocument();
         expect(screen.getByText('img2.png')).toBeInTheDocument();
         expect(screen.getByText('Alt 1')).toBeInTheDocument();
+        expect(screen.getAllByRole('button', { name: /Expandir/i })).toHaveLength(2);
+    });
+
+    it('expands item on click and shows full content', async () => {
+        (useApp as unknown as Mock).mockReturnValue({
+            history: [
+                {
+                    filename: 'img1.png',
+                    alt: 'Alt completo do item 1',
+                    description: 'Descrição longa do item 1 para teste de expansão',
+                },
+            ],
+            clearHistory: vi.fn(),
+        });
+
+        const user = userEvent.setup();
+        render(<History />);
+
+        expect(screen.queryByText('ALT TEXT')).not.toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: /Expandir/i }));
+
+        expect(screen.getByText('ALT TEXT')).toBeInTheDocument();
+        expect(screen.getByText('Alt completo do item 1')).toBeInTheDocument();
+        expect(screen.getByText('Descrição longa do item 1 para teste de expansão')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Recolher/i })).toBeInTheDocument();
     });
 
     it('calls clear history', async () => {

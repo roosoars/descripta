@@ -1,12 +1,12 @@
 # Ignore Firebase cache and logs
-.firebase
+.firebase/
 firebase-debug.log
 firebase-debug.*.log
 
 # Ignore environment variables
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
 
 # Logs
 logs
@@ -21,6 +21,14 @@ node_modules
 dist
 dist-ssr
 *.local
+coverage
+vitest-report.html
+
+# Credentials and private keys
+*.pem
+*.key
+*firebase-adminsdk-*.json
+serviceAccountKey*.json
 
 # Editor directories and files
 .vscode/*

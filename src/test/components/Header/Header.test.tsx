@@ -33,7 +33,7 @@ describe('Header', () => {
         mockUseApp.mockReturnValue({
             setShowSettings: vi.fn(),
             provider: 'gemini',
-            model: 'gemini-1.5-flash',
+            model: 'gemini-2.5-flash',
         });
 
         mockUseTheme.mockReturnValue({
@@ -50,7 +50,7 @@ describe('Header', () => {
 
     it('renders correct provider and model', () => {
         render(<Header />);
-        expect(screen.getByText(/Gemini \/ gemini-1.5-flash/)).toBeInTheDocument();
+        expect(screen.getByText(/Gemini \/ gemini-2.5-flash/)).toBeInTheDocument();
     });
 
     it('toggles theme on click', async () => {
@@ -83,6 +83,17 @@ describe('Header', () => {
         await user.click(settingsButton);
 
         expect(setShowSettings).toHaveBeenCalledWith(true);
+    });
+
+    it('renders GitHub Models label when provider is github-models', () => {
+        mockUseApp.mockReturnValue({
+            setShowSettings: vi.fn(),
+            provider: 'github-models',
+            model: 'openai/gpt-4o',
+        });
+
+        render(<Header />);
+        expect(screen.getByText(/GitHub Models \/ openai\/gpt-4o/)).toBeInTheDocument();
     });
 
     it('calls logout on click', async () => {

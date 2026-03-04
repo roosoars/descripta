@@ -1,10 +1,12 @@
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import './index.css';
 import Login from './components/Auth/Login';
 import Workspace from './components/Workspace/Workspace';
 import Spinner from './components/UI/Spinner';
+import DocsPage from './components/Docs/DocsPage';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -17,13 +19,13 @@ function AppContent() {
     );
   }
 
-  // If not logged in, show Login WITHOUT Layout
-  if (!user) {
-    return <Login />;
-  }
-
-  // If logged in, show Workspace WITH Layout
-  return <Workspace />;
+  return (
+    <Routes>
+      <Route path="/docs" element={<DocsPage />} />
+      <Route path="/" element={user ? <Workspace /> : <Login />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }
 
 function App() {
