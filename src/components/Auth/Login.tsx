@@ -35,12 +35,12 @@ export default function Login() {
             <div className="login__hero">
                 <div className="login__hero-content">
                     <h1 className="login__title">
-                        ALT text e descrição <br />
-                        com clareza
+                        Descrição de imagens <br />
+                        com IA
                     </h1>
 
                     <p className="login__subtitle">
-                        Faça login, escolha o modelo e gere descrições acessíveis em segundos.
+                        Rápido, direto e no seu idioma.
                     </p>
                 </div>
             </div>

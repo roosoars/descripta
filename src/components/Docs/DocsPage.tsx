@@ -1,9 +1,5 @@
-import { useMemo, type ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import {
     BookOpenText,
-    ChevronLeft,
-    ChevronRight,
     History,
     Languages,
     PencilLine,
@@ -17,432 +13,148 @@ import PublicNav from '../PublicNav/PublicNav';
 import './DocsPage.css';
 
 interface DocsSection {
-    heading: string;
+    id: string;
+    title: string;
+    intro: string;
+    icon: LucideIcon;
     paragraphs?: string[];
     items?: string[];
     note?: string;
 }
 
-interface DocsPageContent {
-    title: string;
-    shortLabel: string;
-    subtitle: string;
-    icon: LucideIcon;
-    sections: DocsSection[];
-}
+const QUICK_START_STEPS = [
+    'Entre com Google ou GitHub na home.',
+    'Abra Configurações e escolha provedor e modelo.',
+    'Defina idioma, estilo e glossário (opcional).',
+    'Envie as imagens no Workspace e inicie a geração.',
+    'Revise resultados, edite ALT text quando necessário e exporte CSV.',
+];
 
-const DOCS_PAGES: DocsPageContent[] = [
+const DOCS_SECTIONS: DocsSection[] = [
     {
+        id: 'visao-geral',
         title: 'Visão Geral',
-        shortLabel: 'Início',
-        subtitle: 'Fluxo completo para gerar ALT text e descrições acessíveis com revisão humana.',
         icon: BookOpenText,
-        sections: [
-            {
-                heading: 'Objetivo da aplicação',
-                paragraphs: [
-                    'O Descripta foi criado para acelerar produção de conteúdo acessível para imagens, mantendo revisão manual antes da publicação.',
-                ],
-                items: [
-                    'Gerar ALT text para acessibilidade e SEO.',
-                    'Gerar descrição detalhada para leitura assistiva.',
-                    'Retornar metadados de apoio (objetos, presença de pessoas, cores dominantes e confiança estimada).',
-                    'Permitir revisão manual antes do uso final.',
-                ],
-            },
-            {
-                heading: 'Fluxo recomendado de ponta a ponta',
-                paragraphs: [
-                    'A aplicação foi organizada para que a configuração seja feita uma vez e o processamento ocorra em lote no Workspace.',
-                ],
-                items: [
-                    'Entrar com Google ou GitHub.',
-                    'Abrir Configurações e escolher provedor/modelo.',
-                    'Definir idioma, estilo e glossário (opcional).',
-                    'Enviar imagens no Workspace e iniciar geração.',
-                    'Revisar/editar resultados e validar conteúdo.',
-                    'Exportar CSV e armazenar no seu fluxo interno.',
-                ],
-            },
-            {
-                heading: 'Persistência local (navegador)',
-                paragraphs: [
-                    'Dados de configuração são persistidos no navegador para evitar retrabalho entre sessões.',
-                ],
-                items: [
-                    'Chaves de API (Gemini/OpenAI), provider e modelo selecionado.',
-                    'Idioma, estilo e termos do glossário.',
-                    'Histórico de resultados.',
-                    'Token OAuth do GitHub Models em armazenamento de sessão.',
-                ],
-            },
-            {
-                heading: 'Limites importantes',
-                items: [
-                    'O resultado depende da disponibilidade dos provedores externos.',
-                    'A qualidade do texto pode variar por modelo, idioma e tipo de imagem.',
-                    'Sempre valide o conteúdo final antes de publicar.',
-                ],
-            },
+        intro: 'O Descripta acelera geração de ALT text e descrições acessíveis com revisão humana no fluxo final.',
+        items: [
+            'Geração de ALT text para acessibilidade e SEO.',
+            'Descrição detalhada para leitura assistiva.',
+            'Metadados de apoio: objetos, presença de pessoas, cores dominantes e confiança.',
+            'Revisão manual antes da publicação.',
         ],
     },
     {
+        id: 'acesso-e-autenticacao',
         title: 'Acesso e Autenticação',
-        shortLabel: 'Acesso',
-        subtitle: 'Entrada pela home com autenticação social e sessão de usuário.',
         icon: ShieldCheck,
-        sections: [
-            {
-                heading: 'Como entrar no sistema',
-                paragraphs: [
-                    'A entrada é feita pela home. Após autenticação bem-sucedida, o app carrega o Workspace automaticamente.',
-                ],
-                items: [
-                    'Na home, clique em ENTRAR para abrir o modal de acesso.',
-                    'Escolha um provedor de login: Google ou GitHub.',
-                    'Após autenticar, o app redireciona para o Workspace.',
-                ],
-            },
-            {
-                heading: 'Sessão e saída',
-                paragraphs: [
-                    'A sessão de autenticação controla o acesso à área principal e aos recursos dependentes de login.',
-                ],
-                items: [
-                    'Enquanto a sessão estiver ativa, o usuário permanece autenticado.',
-                    'No header da área logada, o botão de logout encerra a sessão.',
-                    'Ao sair, dados de autenticação são limpos.',
-                ],
-            },
-            {
-                heading: 'GitHub Models com OAuth',
-                paragraphs: [
-                    'A integração com GitHub Models depende da sessão OAuth do próprio login GitHub.',
-                ],
-                items: [
-                    'O provider GitHub Models aparece somente para conta autenticada via GitHub.',
-                    'O app usa token OAuth da sessão GitHub para listar modelos e processar prompts.',
-                    'Se o token expirar, use "Atualizar sessão GitHub" nas configurações.',
-                ],
-            },
-            {
-                heading: 'Privacidade operacional',
-                paragraphs: [
-                    'Não existe backend próprio para processar chaves de OpenAI/Gemini: as credenciais são usadas no navegador para chamar os provedores selecionados.',
-                ],
-            },
+        intro: 'A autenticação é feita pela home, com sessão ativa para uso do Workspace e configurações.',
+        items: [
+            'Login com Google ou GitHub.',
+            'Logout pela área logada encerra sessão atual.',
+            'GitHub Models é liberado somente para usuário autenticado via GitHub.',
+            'Token OAuth GitHub é armazenado em sessão para uso do provider.',
         ],
     },
     {
+        id: 'configuracao-de-provedor-e-modelo',
         title: 'Configuração de Provedor e Modelo',
-        shortLabel: 'Provider',
-        subtitle: 'Configuração detalhada de engine, autenticação e seleção de modelo.',
         icon: SlidersHorizontal,
-        sections: [
-            {
-                heading: 'Provedores disponíveis',
-                paragraphs: [
-                    'A seleção do provedor define autenticação, catálogo de modelos e endpoint utilizado no processamento.',
-                ],
-                items: [
-                    'Google Gemini',
-                    'OpenAI',
-                    'GitHub Models (apenas para sessão autenticada com GitHub)',
-                ],
-            },
-            {
-                heading: 'Como a lista de modelos é carregada',
-                paragraphs: [
-                    'A lista é dinâmica para reduzir risco de modelos indisponíveis ou descontinuados.',
-                ],
-                items: [
-                    'OpenAI: descoberta dinâmica via API de modelos.',
-                    'Gemini: descoberta dinâmica filtrando modelos com suporte a geração de conteúdo.',
-                    'GitHub Models: catálogo dinâmico da conta autenticada via OAuth.',
-                    'GitHub Models: exibe multiplicadores de uso (paid/free) por modelo quando disponíveis.',
-                    'Quando não há retorno no OpenAI/Gemini, o app usa fallback mínimo não depreciado.',
-                ],
-            },
-            {
-                heading: 'Credenciais',
-                paragraphs: [
-                    'Cada provedor exige um tipo de autenticação específico. Sem credencial válida, o lote não inicia.',
-                ],
-                items: [
-                    'Gemini: exige chave informada no campo de API key.',
-                    'OpenAI: exige chave informada no campo de API key.',
-                    'GitHub Models: usa OAuth da sessão GitHub, sem campo manual de PAT.',
-                ],
-            },
-            {
-                heading: 'Erros comuns de configuração',
-                paragraphs: [
-                    'As mensagens de erro indicam o tipo de bloqueio mais provável para agilizar correção.',
-                ],
-                items: [
-                    '401: credencial inválida para o provedor selecionado.',
-                    '403: conta sem permissão para listar ou usar modelos.',
-                    'Sem chave/token: o app não inicia o processamento.',
-                ],
-            },
+        intro: 'A tela de configurações define provedor, credenciais e modelo ativo para processamento.',
+        paragraphs: [
+            'Provedores disponíveis: Google Gemini, OpenAI e GitHub Models.',
+            'OpenAI e Gemini usam chave de API informada no cliente. GitHub Models usa OAuth da sessão GitHub.',
+            'As listas de modelos são carregadas dinamicamente com fallback técnico para evitar tela vazia.',
+        ],
+        items: [
+            '401: credencial inválida.',
+            '403: conta sem permissão para o catálogo/modelo.',
+            'Sem credencial: processamento bloqueado até correção.',
         ],
     },
     {
+        id: 'idioma-estilo-e-glossario',
         title: 'Idioma, Estilo e Glossário',
-        shortLabel: 'Prompt',
-        subtitle: 'Controles aplicados diretamente ao prompt de geração.',
         icon: Languages,
-        sections: [
-            {
-                heading: 'Idioma',
-                paragraphs: [
-                    'O idioma escolhido orienta o texto de ALT e descrição retornados pelo modelo.',
-                ],
-                items: [
-                    'Português (Brasil)',
-                    'English (US)',
-                    'Español',
-                ],
-            },
-            {
-                heading: 'Estilo',
-                paragraphs: [
-                    'O estilo altera a densidade e o tom do conteúdo gerado.',
-                ],
-                items: [
-                    'Conciso: direto ao ponto (ALT com limite recomendado).',
-                    'Detalhado: descrição mais extensa e contextual.',
-                    'Formal: tom profissional.',
-                    'Informal: linguagem mais simples/casual.',
-                ],
-            },
-            {
-                heading: 'Glossário',
-                paragraphs: [
-                    'O glossário ajuda a manter consistência terminológica em lotes grandes e com várias pessoas revisando.',
-                ],
-                items: [
-                    'Você define pares termo -> definição para padronizar vocabulário.',
-                    'Os termos são injetados no prompt e aplicados quando houver correspondência contextual.',
-                    'O glossário fica salvo localmente e pode ser removido termo a termo.',
-                ],
-            },
-            {
-                heading: 'Regras internas do prompt',
-                paragraphs: [
-                    'O app estrutura o prompt para manter saída previsível entre provedores e modelos diferentes.',
-                ],
-                items: [
-                    'O idioma selecionado é imposto para todos os campos textuais de saída.',
-                    'O estilo selecionado é aplicado em ALT e descrição.',
-                    'A resposta esperada é JSON estruturado (alt, description, metadata).',
-                ],
-            },
+        intro: 'Esses controles influenciam diretamente o prompt enviado ao modelo.',
+        items: [
+            'Idiomas: Português (Brasil), English (US) e Español.',
+            'Estilos: conciso, detalhado, formal e informal.',
+            'Glossário: termos personalizados aplicados quando houver correspondência contextual.',
+            'Saída esperada do modelo em JSON estruturado (alt, description, metadata).',
         ],
     },
     {
-        title: 'Upload e Processamento',
-        shortLabel: 'Upload',
-        subtitle: 'Gerenciamento da fila de imagens e execução do lote.',
+        id: 'workspace-e-processamento',
+        title: 'Workspace e Processamento',
         icon: Upload,
-        sections: [
-            {
-                heading: 'Entrada de imagens',
-                paragraphs: [
-                    'A fila do Workspace foi pensada para lote: adicionar, revisar nomes e remover itens antes de processar.',
-                ],
-                items: [
-                    'Clique na área de upload ou arraste e solte imagens.',
-                    'Arquivos não-imagem são ignorados automaticamente.',
-                    'A fila mostra nome dos arquivos e permite remoção individual.',
-                    'Também existe ação para limpar toda a fila.',
-                ],
-            },
-            {
-                heading: 'Processamento',
-                paragraphs: [
-                    'O processamento ocorre imagem por imagem, com progresso visível em tempo real.',
-                ],
-                items: [
-                    'Clique em Gerar Descrições para iniciar o lote.',
-                    'Acompanhe progresso por contador processado/total.',
-                    'Antes de iniciar, o app limpa os resultados atuais para mostrar apenas o lote novo.',
-                    'Se uma imagem falhar, as demais continuam no processamento.',
-                ],
-            },
-            {
-                heading: 'Pré-requisitos por provedor',
-                paragraphs: [
-                    'Valide credenciais e sessão antes de iniciar para evitar retrabalho.',
-                ],
-                items: [
-                    'Gemini/OpenAI: chave precisa estar salva em Configurações.',
-                    'GitHub Models: sessão OAuth GitHub precisa estar válida.',
-                    'Sem credencial, o app exibe toast de erro e não inicia o lote.',
-                ],
-            },
-            {
-                heading: 'Saída do processamento',
-                paragraphs: [
-                    'Resultado e histórico são atualizados durante o lote para facilitar revisão incremental.',
-                ],
-                items: [
-                    'Cada item processado entra em Resultados com ALT, descrição e metadados.',
-                    'Ao mesmo tempo, o item é registrado no Histórico.',
-                ],
-            },
+        intro: 'O Workspace organiza fila de imagens e execução em lote com progresso visível.',
+        items: [
+            'Upload por clique ou arraste-e-solte.',
+            'Remoção individual de arquivo e limpeza total da fila.',
+            'Execução do lote com progresso processado/total.',
+            'Falha de uma imagem não interrompe as demais.',
         ],
     },
     {
+        id: 'resultados-e-edicao',
         title: 'Resultados e Edição',
-        shortLabel: 'Resultados',
-        subtitle: 'Tela de revisão para garantir qualidade e consistência do conteúdo.',
         icon: PencilLine,
-        sections: [
-            {
-                heading: 'Ações disponíveis por card',
-                paragraphs: [
-                    'A revisão é feita diretamente nos cards para reduzir troca de contexto.',
-                ],
-                items: [
-                    'Mostrar/ocultar preview da imagem (quando disponível).',
-                    'Editar ALT text e salvar alteração.',
-                    'Copiar ALT text para clipboard.',
-                    'Expandir metadados do item.',
-                ],
-            },
-            {
-                heading: 'Metadados exibidos',
-                paragraphs: [
-                    'Os metadados ajudam a priorizar revisão de itens com menor confiança.',
-                ],
-                items: [
-                    'Confiança da geração em percentual.',
-                    'Lista de objetos detectados (até 5 no card).',
-                    'Campos técnicos completos permanecem no objeto do resultado para exportação.',
-                ],
-            },
-            {
-                heading: 'Ações de lista',
-                paragraphs: [
-                    'As ações de lista afetam todos os cards carregados na visualização atual.',
-                ],
-                items: [
-                    'Limpar todos os resultados da tela atual.',
-                    'Exportar CSV do conjunto carregado em Resultados.',
-                ],
-            },
-            {
-                heading: 'Recomendação operacional',
-                paragraphs: [
-                    'Faça revisão humana de todos os textos antes de publicar em produção ou em canais públicos.',
-                ],
-            },
+        intro: 'A revisão acontece em cards com ações rápidas para validação e ajustes.',
+        items: [
+            'Visualizar preview da imagem.',
+            'Editar ALT text e salvar.',
+            'Copiar ALT text para área de transferência.',
+            'Expandir metadados e confiança da geração.',
+            'Exportar resultados carregados em CSV.',
         ],
     },
     {
+        id: 'historico-e-exportacao',
         title: 'Histórico e Exportação',
-        shortLabel: 'Histórico',
-        subtitle: 'Consulta de execuções anteriores e formato de exportação disponível.',
         icon: History,
-        sections: [
-            {
-                heading: 'Como o histórico funciona',
-                paragraphs: [
-                    'O histórico permite revisar conteúdo gerado anteriormente sem depender de novo processamento.',
-                ],
-                items: [
-                    'Cada resultado novo é adicionado automaticamente ao histórico local.',
-                    'Cada item pode ser expandido para visualizar ALT e descrição completos.',
-                    'A ação Limpar Histórico remove todos os itens salvos localmente.',
-                ],
-            },
-            {
-                heading: 'Exportação',
-                paragraphs: [
-                    'A exportação atual é focada em integração simples com planilhas e fluxos internos.',
-                ],
-                items: [
-                    'Formato atual: CSV.',
-                    'Colunas exportadas: Filename, Alt Text, Description, Confidence.',
-                    'O arquivo CSV é gerado no navegador e baixado localmente.',
-                ],
-                note: 'A exportação em JSON estará disponível nas próximas versões.',
-            },
-            {
-                heading: 'Boas práticas de uso',
-                paragraphs: [
-                    'A rastreabilidade do lote reduz retrabalho e melhora consistência editorial.',
-                ],
-                items: [
-                    'Defina padrão de revisão antes de exportar dados.',
-                    'Mantenha rastreabilidade do lote (data, provider, modelo e idioma).',
-                    'Regenere itens com baixa confiança quando necessário.',
-                ],
-            },
+        intro: 'O histórico registra resultados locais e permite revisão posterior sem novo processamento.',
+        items: [
+            'Novos resultados entram automaticamente no histórico.',
+            'Cada item pode ser expandido para visualizar ALT e descrição completos.',
+            'Ação Limpar Histórico remove registros locais.',
+            'Exportação atual disponível em CSV.',
         ],
+        note: 'A exportação em JSON estará disponível nas próximas versões.',
     },
     {
+        id: 'limites-e-troubleshooting',
         title: 'Limites e Troubleshooting',
-        shortLabel: 'Limites',
-        subtitle: 'Diagnóstico rápido para falhas comuns de autenticação, modelo e processamento.',
         icon: TriangleAlert,
-        sections: [
-            {
-                heading: 'Falhas comuns por categoria',
-                paragraphs: [
-                    'Os problemas mais recorrentes estão ligados a autenticação, permissão e limites da conta no provedor externo.',
-                ],
-                items: [
-                    'Autenticação: sem login ou sessão expirada (GitHub OAuth).',
-                    'Credencial: chave inválida para OpenAI/Gemini.',
-                    'Permissão: conta sem acesso ao catálogo/modelo selecionado.',
-                    'Quota: limite de uso atingido no provedor externo.',
-                    'Resposta inválida: erro de parsing do retorno do modelo.',
-                ],
-            },
-            {
-                heading: 'Checklist recomendado de diagnóstico',
-                paragraphs: [
-                    'Siga os passos na ordem para reduzir tempo de investigação.',
-                ],
-                items: [
-                    'Confirmar login ativo e provider correto.',
-                    'Validar chave/tokens atuais em Configurações.',
-                    'Trocar o modelo para uma opção conhecida do mesmo provider.',
-                    'Testar com uma única imagem para isolar problema.',
-                    'Verificar conexão de rede e bloqueios de CORS/proxy no ambiente.',
-                    'Executar novo lote após atualizar credencial/sessão.',
-                ],
-            },
-            {
-                heading: 'Limitações atuais',
-                paragraphs: [
-                    'Estas limitações refletem o comportamento atual da aplicação no estado desta versão.',
-                ],
-                items: [
-                    'A exportação disponível atualmente é CSV.',
-                    'Edição manual no card altera ALT text (descrição permanece gerada).',
-                    'A execução depende da disponibilidade dos serviços externos (OpenAI, Gemini e GitHub Models).',
-                ],
-            },
+        intro: 'A operação depende da disponibilidade dos provedores externos e da credencial correta.',
+        items: [
+            'Verifique login ativo, provider selecionado e credencial válida.',
+            'Troque de modelo para isolar erro de catálogo/permite.',
+            'Teste com uma imagem para diagnóstico rápido.',
+            'Revise conectividade de rede, proxy e políticas CORS do ambiente.',
         ],
     },
 ];
 
-function clamp(value: number, min: number, max: number) {
-    return Math.max(min, Math.min(max, value));
-}
+function renderSection(section: DocsSection) {
+    const SectionIcon = section.icon;
 
-function renderSection(section: DocsSection): ReactNode {
     return (
-        <section key={section.heading} className="docs-section">
-            <h2>
-                {section.heading}
-            </h2>
+        <section id={section.id} key={section.id} className="docs-section">
+            <header className="docs-section__header">
+                <span className="docs-section__icon" aria-hidden="true">
+                    <SectionIcon size={18} />
+                </span>
+                <h2>{section.title}</h2>
+            </header>
+
+            <p className="docs-section__intro">{section.intro}</p>
+
             {section.paragraphs?.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
+                <p key={paragraph} className="docs-section__paragraph">
+                    {paragraph}
+                </p>
             ))}
+
             {section.items && (
                 <ul className="docs-section__list">
                     {section.items.map((item) => (
@@ -450,102 +162,75 @@ function renderSection(section: DocsSection): ReactNode {
                     ))}
                 </ul>
             )}
-            {section.note && <p className="docs-note">{section.note}</p>}
+
+            {section.note && <p className="docs-section__note">{section.note}</p>}
         </section>
     );
 }
 
 export default function DocsPage() {
-    const [searchParams, setSearchParams] = useSearchParams();
-    const requestedPage = Number(searchParams.get('page') || '1');
-    const pageIndex = useMemo(() => {
-        if (Number.isNaN(requestedPage)) return 0;
-        return clamp(requestedPage - 1, 0, DOCS_PAGES.length - 1);
-    }, [requestedPage]);
-
-    const totalPages = DOCS_PAGES.length;
-    const page = DOCS_PAGES[pageIndex];
-    const canGoPrev = pageIndex > 0;
-    const canGoNext = pageIndex < totalPages - 1;
-    const progress = ((pageIndex + 1) / totalPages) * 100;
-    const PageIcon = page.icon;
-
-    const goToPage = (index: number) => {
-        const nextIndex = clamp(index, 0, totalPages - 1);
-        const nextPage = String(nextIndex + 1);
-        setSearchParams(nextPage === '1' ? {} : { page: nextPage });
-    };
-
     return (
         <div className="docs-page">
             <PublicNav fixed brandLabel="DESCRIPTA DOCS" />
 
-            <main className="docs-main">
-                <header className="docs-header">
-                    <div className="docs-header__top">
-                        <span className="docs-header__counter">Página {pageIndex + 1} de {totalPages}</span>
-                        <div className="docs-header__track" aria-hidden="true">
-                            <span className="docs-header__fill" style={{ width: `${progress}%` }} />
-                        </div>
-                    </div>
-
-                    <nav className="docs-flow" aria-label="Navegação de páginas da documentação">
-                        <button
-                            type="button"
-                            onClick={() => goToPage(pageIndex - 1)}
-                            disabled={!canGoPrev}
-                            aria-label="Página anterior"
-                            className="docs-flow__arrow"
-                        >
-                            <ChevronLeft size={18} />
-                            <span>{'<'} Anterior</span>
-                        </button>
-
-                        <div className="docs-flow__markers">
-                            {DOCS_PAGES.map((docsPage, index) => {
-                                const active = index === pageIndex;
-                                return (
-                                    <button
-                                        key={docsPage.title}
-                                        type="button"
-                                        onClick={() => goToPage(index)}
-                                        aria-label={`Ir para página ${index + 1}`}
-                                        aria-current={active ? 'page' : undefined}
-                                        className={`docs-flow__marker ${active ? 'is-active' : ''}`}
-                                    >
-                                        <span className="docs-flow__marker-number">{index + 1}</span>
-                                        <span className="docs-flow__marker-label">{docsPage.shortLabel}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={() => goToPage(pageIndex + 1)}
-                            disabled={!canGoNext}
-                            aria-label="Próxima página"
-                            className="docs-flow__arrow docs-flow__arrow--next"
-                        >
-                            <span>Próxima {'>'}</span>
-                            <ChevronRight size={18} />
-                        </button>
+            <main className="docs-shell">
+                <aside className="docs-sidebar" aria-label="Navegação da documentação">
+                    <p className="docs-sidebar__kicker">Guia</p>
+                    <h2 className="docs-sidebar__title">Documentação</h2>
+                    <nav>
+                        <ul className="docs-sidebar__list">
+                            <li>
+                                <a className="docs-sidebar__link" href="#inicio-rapido">Início Rápido</a>
+                            </li>
+                            {DOCS_SECTIONS.map((section) => (
+                                <li key={section.id}>
+                                    <a className="docs-sidebar__link" href={`#${section.id}`}>{section.title}</a>
+                                </li>
+                            ))}
+                        </ul>
                     </nav>
-
-                    <div className="docs-header__hero">
-                        <div className="docs-header__icon" aria-hidden="true">
-                            <PageIcon size={22} />
-                        </div>
-                        <div className="docs-header__text">
-                            <h1>{page.title}</h1>
-                            <p>{page.subtitle}</p>
-                        </div>
-                    </div>
-                </header>
+                </aside>
 
                 <article className="docs-article">
-                    {page.sections.map(renderSection)}
+                    <header className="docs-hero">
+                        <p className="docs-hero__kicker">Descripta Docs</p>
+                        <h1>Guia de uso do Descripta</h1>
+                        <p>
+                            Documento completo para configurar o app, gerar descrições de imagens com IA
+                            e revisar resultados com consistência.
+                        </p>
+                    </header>
+
+                    <section id="inicio-rapido" className="docs-section docs-section--quickstart">
+                        <header className="docs-section__header">
+                            <span className="docs-section__icon" aria-hidden="true">
+                                <BookOpenText size={18} />
+                            </span>
+                            <h2>Início Rápido</h2>
+                        </header>
+                        <ol className="docs-section__steps">
+                            {QUICK_START_STEPS.map((step) => (
+                                <li key={step}>{step}</li>
+                            ))}
+                        </ol>
+                    </section>
+
+                    {DOCS_SECTIONS.map(renderSection)}
                 </article>
+
+                <aside className="docs-outline" aria-label="Resumo da página">
+                    <p className="docs-outline__title">Nesta página</p>
+                    <ol className="docs-outline__list">
+                        <li>
+                            <a href="#inicio-rapido">Início Rápido</a>
+                        </li>
+                        {DOCS_SECTIONS.map((section) => (
+                            <li key={`outline-${section.id}`}>
+                                <a href={`#${section.id}`}>{section.title}</a>
+                            </li>
+                        ))}
+                    </ol>
+                </aside>
             </main>
         </div>
     );
