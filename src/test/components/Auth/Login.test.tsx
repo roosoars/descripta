@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import Login from '../../../components/Auth/Login';
 
 const loginWithGoogleMock = vi.fn();
@@ -26,6 +27,10 @@ vi.mock('../../../context/ThemeContext', () => ({
 }));
 
 describe('Login', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     it('renders icon logo and nav actions in expected order', () => {
         const { container } = render(<Login />);
 
@@ -42,30 +47,34 @@ describe('Login', () => {
     });
 
     it('opens login modal on access click', async () => {
+        const user = userEvent.setup();
         render(<Login />);
 
         const accessButton = screen.getByRole('button', { name: 'ENTRAR' });
-        fireEvent.click(accessButton);
+        await user.click(accessButton);
 
         expect(await screen.findByText(/Entrar no DESCRIPTA/)).toBeInTheDocument();
         expect(screen.getByText('Continuar com Google')).toBeInTheDocument();
     });
 
     it('calls login providers', async () => {
+        loginWithGoogleMock.mockResolvedValueOnce(undefined);
+        const user = userEvent.setup();
         render(<Login />);
 
         const accessButton = screen.getByRole('button', { name: 'ENTRAR' });
-        fireEvent.click(accessButton);
+        await user.click(accessButton);
 
         const googleBtn = await screen.findByText('Continuar com Google');
-        fireEvent.click(googleBtn);
+        await user.click(googleBtn);
 
         expect(loginWithGoogleMock).toHaveBeenCalled();
     });
 
-    it('toggles theme from navbar button', () => {
+    it('toggles theme from navbar button', async () => {
+        const user = userEvent.setup();
         render(<Login />);
-        fireEvent.click(screen.getByRole('button', { name: /Ativar modo escuro/i }));
+        await user.click(screen.getByRole('button', { name: /Ativar modo escuro/i }));
         expect(toggleThemeMock).toHaveBeenCalled();
     });
 });

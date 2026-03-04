@@ -8,7 +8,9 @@ describe('Toast', () => {
     });
 
     afterEach(() => {
-        vi.runOnlyPendingTimers();
+        act(() => {
+            vi.runOnlyPendingTimers();
+        });
         vi.useRealTimers();
     });
 
